@@ -106,10 +106,12 @@ def plot_spectrum(coadd_fn, index, use_targetid=False, show_lines=True, show_res
         tid = tmp['TARGETID'][index]
         coadd_index = index
 
-    # Get model spectrum
-    _, model_flux, z = get_rr_model(coadd_fn, coadd_index, return_z=True)
+    if show_model:
+        # Get model spectrum
+        _, model_flux = get_rr_model(coadd_fn, coadd_index)
 
     redshifts = Table(fitsio.read(coadd_fn.replace('/coadd-', '/redrock-'), ext='REDSHIFTS'))
+    z = redshifts['Z'][coadd_index]
         
     fig, ax1 = plt.subplots(figsize=figsize)
     for camera in ['B', 'R', 'Z']:
