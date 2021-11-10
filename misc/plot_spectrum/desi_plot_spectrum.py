@@ -124,7 +124,7 @@ def plot_spectrum(coadd_fn, index, use_targetid=False, show_lines=True, show_res
         if gauss_smooth==0 or gauss_smooth is None:
             flux_smooth = flux.copy()
         elif gauss_smooth>0:
-            flux_smooth = gaussian_filter1d(flux, 3, mode='constant', cval=0)
+            flux_smooth = gaussian_filter1d(flux, gauss_smooth, mode='constant', cval=0)
 
         if camera=='B':
             if label is not None:
@@ -139,7 +139,7 @@ def plot_spectrum(coadd_fn, index, use_targetid=False, show_lines=True, show_res
             if gauss_smooth==0 or gauss_smooth is None:
                 model_flux_smooth = model_flux[camera].copy()
             elif gauss_smooth>0:
-                model_flux_smooth = gaussian_filter1d(model_flux[camera], 3, mode='constant', cval=0)
+                model_flux_smooth = gaussian_filter1d(model_flux[camera], gauss_smooth, mode='constant', cval=0)
             ax1.plot(wave, model_flux_smooth, lw=lw, color='r', alpha=0.65)
 
     if show_lines:
