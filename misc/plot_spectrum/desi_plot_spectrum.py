@@ -66,7 +66,8 @@ def get_rr_model(coadd_fn, index, use_targetid=False, restframe=False, z=None, r
 
 
 def plot_spectrum(coadd_fn, index, use_targetid=False, show_lines=True, show_restframe=True, show_model=True,
-    figsize=(20, 8), lw=1.2, gauss_smooth=3, label=None, show=True, return_ax=False, xlim=[3400, 10000], ylim=[-1., 2.]):
+    figsize=(20, 8), lw=1.2, gauss_smooth=3, label=None, title=None, show=True, return_ax=False,
+    xlim=[3400, 10000], ylim=[-1., 2.]):
     '''
     Plot DESI spectrum.
 
@@ -154,6 +155,8 @@ def plot_spectrum(coadd_fn, index, use_targetid=False, show_lines=True, show_res
     # plt.axvline(4000, ls='--', lw=1, color='k')
     ax1.legend(loc='upper left', handletextpad=.0, handlelength=0)
     ax1.grid()
+    if title is not None:
+        ax1.set_title(title)
     if show_restframe:
         ax2 = ax1.twiny()
         ax2.set_xlim(3400/(1+z), 10000/(1+z))
@@ -173,4 +176,5 @@ def plot_spectrum(coadd_fn, index, use_targetid=False, show_lines=True, show_res
 # coadd_fn = '/global/cfs/cdirs/desi/spectro/redux/everest/tiles/cumulative/80605/20210205/coadd-0-80605-thru20210205.fits'
 # tid = 39627640566453451
 # plot_spectrum(coadd_fn, tid, use_targetid=True)
+
 
