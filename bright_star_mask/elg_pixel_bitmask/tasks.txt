@@ -1,0 +1,8 @@
+south 4 0
+south 4 1
+south 4 2
+south 4 3
+north 4 0
+north 4 1
+north 4 2
+north 4 3

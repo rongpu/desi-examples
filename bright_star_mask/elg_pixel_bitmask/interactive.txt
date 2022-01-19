@@ -1,0 +1,2 @@
+salloc -N 4 -C haswell -q interactive -t 04:00:00 --account desi
+srun --wait=0 --ntasks-per-node 1 payload.sh tasks.txt ; exit
