@@ -18,4 +18,4 @@ cat $1 |                                               \
 awk -v NNODE="$SLURM_NNODES" -v NODEID="$SLURM_NODEID" \
 'NR % NNODE == NODEID' |                               \
 # parallel --jobs 1 ./task.sh $ntasks {} $SLURM_NNODES $SLURM_NODEID
-parallel --jobs 1 python elg_gaiamask.py {}
+parallel --jobs 1 python create_gaiamask_bricks.py {}

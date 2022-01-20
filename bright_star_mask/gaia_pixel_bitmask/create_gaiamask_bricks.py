@@ -1,7 +1,7 @@
 # Generate per-brick ELG mask
 # GAIA mask + custom masks
 # To run on single interactive node:
-# python elg_gaiamask.py "south 1 0"
+# python create_gaiamask_bricks.py "south 1 0"
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc
