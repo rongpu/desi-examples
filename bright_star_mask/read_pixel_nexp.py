@@ -53,7 +53,10 @@ def bitmask_radec(brickid, ra, dec):
     elif bricks['PHOTSYS'][brick_index]=='S':
         field = 'south'
     else:
-        raise ValueError
+        # Outside DR9 footprint; assign NEXP=0
+        n_g, n_r, n_z = np.full((3, len(ra)), 0, dtype=np.int16)
+        return n_g, n_r, n_z
+
     # bitmask_fn = '/global/cfs/cdirs/cosmo/data/legacysurvey/dr9/{}/coadd/{}/{}/legacysurvey-{}-maskbits.fits.fz'.format(field, brickname[:3], brickname, brickname)
     nexp_g_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-g.fits.fz'.format(field, brickname[:3], brickname, brickname))
     nexp_r_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-r.fits.fz'.format(field, brickname[:3], brickname, brickname))
