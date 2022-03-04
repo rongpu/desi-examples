@@ -76,7 +76,7 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cam
 
 def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cameras=False,
     show_lines=True, show_restframe=True, show_model=True, figsize=(20, 8), lw=1.2, gauss_smooth=3,
-    label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim=None):
+    label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim=None, grid=True):
     '''
     Plot DESI spectrum.
 
@@ -203,7 +203,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             elif gauss_smooth>0:
                 # model_flux_smooth = gaussian_filter1d(model_flux[camera], gauss_smooth, mode='constant', cval=0)
                 model_flux_smooth = convolve(model_flux[camera], gauss_kernel, boundary='extend')
-            ax1.plot(wave, model_flux_smooth, lw=lw, color='r', alpha=0.65)
+            ax1.plot(wave, model_flux_smooth, lw=3, color='r', alpha=0.4)
         ymin = np.minimum(ymin, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 1.))
         ymax = np.maximum(ymax, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 99.))
 
@@ -221,7 +221,8 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     ax1.set_xlabel('observed wavelength ($\AA$)')
     # plt.axvline(4000, ls='--', lw=1, color='k')
     ax1.legend(loc='upper left', handletextpad=.0, handlelength=0)
-    ax1.grid()
+    if grid:
+        ax1.grid()
     if title is not None:
         ax1.set_title(title)
     if show_restframe:
