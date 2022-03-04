@@ -111,38 +111,37 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     #     'LYB'         : 1025.72
     # }
     
-    lines = {
+    lines = [
     # Major absorption lines
-    'K': 3933.7,
-    'H': 3968.5,
-    'G': 4307.74,
-    'Mg I': 5175.0,
-    'D2': 5889.95,
-    'D1': 5895.92,
+    ['K', 3933.7, 1],
+    ['H', 3968.5, 2],
+    ['G', 4307.74, 0],
+    ['Mg I', 5175.0, 0],
+    ['D2', 5889.95, 0],
+    ['D1', 5895.92, 1],
 
     # Major emission lines
-    r'Ly$alpha$': 1215.67,
-    'C IV': 1549.48,
-    'C III]': 1908.734,
-    'Mg II': 2796.3543,
-    'Mg II': 2803.5315,
-    '[O II]': 3726.032,
-    '[O II]': 3728.815,
-    '[Ne III]': 3868.76,
-    r'H$\delta$': 4101.734,
-    r'H$\gamma$': 4340.464,
-    r'H$\beta$': 4861.325,
-    '[O III]': 4958.911,
-    '[O III]': 5006.843,
-    r'H$\alpha$': 6562.801,
-    '[N II]': 6583.45,
-    '[S II]': 6716.44,
-    '[S II]': 6730.82,
-    }
+    [r'Ly$alpha$', 1215.67, 0],
+    ['C IV', 1549.48, 0],
+    ['C III]', 1908.734, 0],
+    ['Mg II', 2796.3543, 0],
+    ['Mg II', 2803.5315, 1],
+    # ['[O II]', 3726.032, 0],
+    # ['[O II]', 3728.815, 1],
+    ['[O II]', 3727.424, 0],
+    ['[Ne III]', 3868.76, 0],
+    [r'H$\delta$', 4101.734, 0],
+    [r'H$\gamma$', 4340.464, 1],
+    [r'H$\beta$', 4861.325, 0],
+    ['[O III]', 4958.911, 0],
+    ['[O III]', 5006.843, 1],
+    [r'H$\alpha$', 6562.801, 0],
+    ['[N II]', 6583.45, 1],
+    ['[S II]', 6716.44, 0],
+    ['[S II]', 6730.82, 1],
+    ]
 
-    crowded_lines = {
-    'K':1, 'H':2, r'H$\gamma$':1, 'D1':1, '[Ne II]':1,
-    }
+    line_names = [tmp[0] for tmp in lines]
 
     tmp = fitsio.read(coadd_fn, columns=['TARGETID'], ext='FIBERMAP')
 
@@ -211,13 +210,13 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     if ylim is None:
         ylim = [ymin, ymax]
     if show_lines:
-        for line in lines.keys():
-            if (lines[line]*(1+z)>3400) & (lines[line]*(1+z)<10000):
-                ax1.axvline(lines[line]*(1+z), lw=lw, color='r', alpha=0.3)
+        for line_index in range(len(lines)):
+            line_name, line_wavelength, text_offset = lines[line_index]
+            if (line_wavelength*(1+z)>3400) & (line_wavelength*(1+z)<10000):
+                ax1.axvline(line_wavelength*(1+z), lw=lw, color='r', alpha=0.3)
                 text_yposition = 0.95*ymin+0.05*ymax
-                if line in crowded_lines.keys():
-                    text_yposition += 0.1*crowded_lines[line]
-                ax1.text(lines[line]*(1+z), text_yposition, line)
+                text_yposition += 0.1*text_offset
+                ax1.text(line_wavelength*(1+z)+7, text_yposition, line_name)
     ax1.axis([xlim[0], xlim[1], ylim[0], ylim[1]])
     ax1.set_xlabel('observed wavelength ($\AA$)')
     # plt.axvline(4000, ls='--', lw=1, color='k')
