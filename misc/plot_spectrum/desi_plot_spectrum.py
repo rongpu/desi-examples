@@ -218,7 +218,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
         else:
             plot_label = None
 
-        ax1.plot(wave, flux_smooth, lw=lw, label='data')
+        ax1.plot(wave, flux_smooth, lw=lw, label='data', color='C0')
         if show_model:
             if gauss_smooth==0 or gauss_smooth is None:
                 model_flux_smooth = model_flux[camera].copy()
