@@ -1,10 +1,12 @@
 from __future__ import division, print_function
+import sys, os, glob, time, warnings, gc
 import numpy as np
 # import matplotlib
 # matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from astropy.table import Table
+from astropy.table import Table, vstack, hstack, join
 import fitsio
+# from astropy.io import fits
 
 
 def get_rr_model(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cameras=False, restframe=False, z=None, return_z=False):
@@ -75,8 +77,8 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cam
 
 
 def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cameras=False,
-    show_lines=True, show_restframe=True, show_model=True, figsize=(20, 8), lw=1.2, gauss_smooth=3,
-    label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim=None, grid=True):
+    show_lines=True, show_restframe=True, show_model=True, figsize=(22, 5), lw=1.2, gauss_smooth=3,
+    label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim=None, grid=False):
     '''
     Plot DESI spectrum.
 
@@ -93,6 +95,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
 
     # from scipy.ndimage import gaussian_filter1d
     from astropy.convolution import Gaussian1DKernel, convolve
+    from matplotlib.ticker import AutoMinorLocator
 
     # lines = {
     #     'Ha'      : 6562.8,
@@ -159,7 +162,21 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     if redrock_fn is None:
         redrock_fn = coadd_fn.replace('/coadd-', '/redrock-')
     redshifts = Table(fitsio.read(redrock_fn, ext='REDSHIFTS'))
+    fibermap = Table(fitsio.read(redrock_fn, ext='FIBERMAP'))
+    fibermap.remove_column('TARGETID')
+    redshifts = hstack([redshifts, fibermap])
     z = redshifts['Z'][coadd_index]
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        redshifts['gmag'] = 22.5 - 2.5*np.log10(redshifts['FLUX_G']) - 3.214 * redshifts['EBV']
+        redshifts['rmag'] = 22.5 - 2.5*np.log10(redshifts['FLUX_R']) - 2.165 * redshifts['EBV']
+        redshifts['zmag'] = 22.5 - 2.5*np.log10(redshifts['FLUX_Z']) - 1.211 * redshifts['EBV']
+        redshifts['w1mag'] = 22.5 - 2.5*np.log10(redshifts['FLUX_W1']) - 0.184 * redshifts['EBV']
+        redshifts['w2mag'] = 22.5 - 2.5*np.log10(redshifts['FLUX_W2']) - 0.113 * redshifts['EBV']
+        redshifts['gfibermag'] = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_G']) - 3.214 * redshifts['EBV']
+        redshifts['rfibermag'] = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_R']) - 2.165 * redshifts['EBV']
+        redshifts['zfibermag'] = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_Z']) - 1.211 * redshifts['EBV']
 
     ymin, ymax = 0., 0.
 
@@ -177,7 +194,8 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
         bad = msk!=0
         # flux[bad] = 0.
         flux[bad] = np.nan
-        model_flux[camera][bad] = np.nan
+        if show_model:
+            model_flux[camera][bad] = np.nan
         # if np.sum(bad)!=0:
         #     print('{} masked pixels: {}'.format(camera, np.sum(bad)))
 
@@ -192,18 +210,22 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             if label is not None:
                 plot_label = label
             else:
-                plot_label = 'TID={}\nZ={:.4f}  TYPE={}  ZWARN={}  DELTACHI2={:.1f}'.format(tid, z, redshifts['SPECTYPE'][coadd_index], redshifts['ZWARN'][coadd_index], redshifts['DELTACHI2'][coadd_index])
+                plot_label = 'TARGETID={}'.format(tid)
+                plot_label += '  g={:.2f} r={:.2f} z={:.2f} W1={:.2f} zfiber={:.2f}'.format(
+                    redshifts['gmag'][coadd_index], redshifts['rmag'][coadd_index], redshifts['zmag'][coadd_index], redshifts['w1mag'][coadd_index], redshifts['zfibermag'][coadd_index])
+                plot_label += '\nRedshift={:.4f}  TYPE={}  ZWARN={}  DELTACHI2={:.1f}'.format(
+                    z, redshifts['SPECTYPE'][coadd_index], redshifts['ZWARN'][coadd_index], redshifts['DELTACHI2'][coadd_index])
         else:
             plot_label = None
 
-        ax1.plot(wave, flux_smooth, lw=lw, label=plot_label)
+        ax1.plot(wave, flux_smooth, lw=lw, label='data')
         if show_model:
             if gauss_smooth==0 or gauss_smooth is None:
                 model_flux_smooth = model_flux[camera].copy()
             elif gauss_smooth>0:
                 # model_flux_smooth = gaussian_filter1d(model_flux[camera], gauss_smooth, mode='constant', cval=0)
                 model_flux_smooth = convolve(model_flux[camera], gauss_kernel, boundary='extend')
-            ax1.plot(wave, model_flux_smooth, lw=3, color='r', alpha=0.4)
+            ax1.plot(wave, model_flux_smooth, lw=3, color='r', alpha=0.4, label='best-fit model')
         ymin = np.minimum(ymin, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 1.))
         ymax = np.maximum(ymax, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 99.))
 
@@ -214,13 +236,16 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             line_name, line_wavelength, text_offset = lines[line_index]
             if (line_wavelength*(1+z)>3400) & (line_wavelength*(1+z)<10000):
                 ax1.axvline(line_wavelength*(1+z), lw=lw, color='C2', alpha=1, ls='--')
-                text_yposition = 0.95*ylim[0]+0.05*ylim[1]
-                text_yposition += 0.1*text_offset
+                text_yposition = 0.96*ylim[0]+0.04*ylim[1]
+                text_yposition += 0.05*(ylim[1]-ylim[0])*text_offset
                 ax1.text(line_wavelength*(1+z)+7, text_yposition, line_name)
+    ax1.text(3450, 0.04*ylim[0]+0.96*ylim[1], plot_label, verticalalignment='top',
+            fontsize=plt.rcParams['legend.fontsize'], bbox=dict(facecolor='white', alpha=0.7))
     ax1.axis([xlim[0], xlim[1], ylim[0], ylim[1]])
     ax1.set_xlabel('observed wavelength ($\AA$)')
     # plt.axvline(4000, ls='--', lw=1, color='k')
-    ax1.legend(loc='upper left', handletextpad=.0, handlelength=0)
+    # ax1.legend(loc='upper left', handletextpad=.0, handlelength=0)
+    ax1.legend(loc=(0.885, 0.16))
     if grid:
         ax1.grid()
     if title is not None:
@@ -230,6 +255,10 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
         ax2.set_xlim(3400/(1+z), 10000/(1+z))
         ax2.set_xlabel('restframe wavelength ($\AA$)')
         ax1.set_ylabel('flux ($10^{-17}$ ergs/s/cm$^2$/$\AA$)')
+    ax1.xaxis.set_minor_locator(AutoMinorLocator())
+    ax1.tick_params(axis="both", which='both', direction="in", top=False, right=True)
+    ax2.xaxis.set_minor_locator(AutoMinorLocator())
+    ax2.tick_params(which='both', direction="in")
     plt.tight_layout()
     # plt.savefig('/global/cfs/cdirs/desi/users/rongpu/plots/lrg_speed/spectra_low_speed_failures/{}_deep.png'.format(tid))
     if show:
