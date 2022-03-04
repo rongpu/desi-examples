@@ -213,8 +213,8 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
         for line_index in range(len(lines)):
             line_name, line_wavelength, text_offset = lines[line_index]
             if (line_wavelength*(1+z)>3400) & (line_wavelength*(1+z)<10000):
-                ax1.axvline(line_wavelength*(1+z), lw=lw, color='r', alpha=0.3)
-                text_yposition = 0.95*ymin+0.05*ymax
+                ax1.axvline(line_wavelength*(1+z), lw=lw, color='C2', alpha=1, ls='--')
+                text_yposition = 0.95*ylim[0]+0.05*ylim[1]
                 text_yposition += 0.1*text_offset
                 ax1.text(line_wavelength*(1+z)+7, text_yposition, line_name)
     ax1.axis([xlim[0], xlim[1], ylim[0], ylim[1]])
