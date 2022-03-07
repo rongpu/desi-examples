@@ -238,7 +238,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
                 ax1.axvline(line_wavelength*(1+z), lw=lw, color='C2', alpha=1, ls='--')
                 text_yposition = 0.96*ylim[0]+0.04*ylim[1]
                 text_yposition += 0.05*(ylim[1]-ylim[0])*text_offset
-                ax1.text(line_wavelength*(1+z)+7, text_yposition, line_name)
+                ax1.text(line_wavelength*(1+z)+7, text_yposition, line_name, fontsize=plt.rcParams['legend.fontsize'])
     ax1.text(3450, 0.04*ylim[0]+0.96*ylim[1], plot_label, verticalalignment='top',
             fontsize=plt.rcParams['legend.fontsize'], bbox=dict(facecolor='white', alpha=0.7))
     ax1.axis([xlim[0], xlim[1], ylim[0], ylim[1]])
