@@ -8,6 +8,14 @@ from astropy.table import Table, vstack, hstack, join
 import fitsio
 # from astropy.io import fits
 
+params = {'legend.fontsize': 'x-large',
+         'axes.labelsize': 'x-large',
+         'axes.titlesize': 'x-large',
+         'xtick.labelsize': 'x-large',
+         'ytick.labelsize': 'x-large',
+         'figure.facecolor': 'w'} 
+plt.rcParams.update(params)
+
 
 def get_rr_model(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cameras=False, restframe=False, z=None, return_z=False):
     '''
@@ -206,26 +214,27 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             gauss_kernel = Gaussian1DKernel(stddev=gauss_smooth)
             flux_smooth = convolve(flux, gauss_kernel, boundary='extend')
 
-        if camera=='B' or camera=='BRZ':
-            if label is not None:
-                plot_label = label
-            else:
-                plot_label = 'TARGETID={}'.format(tid)
-                plot_label += '  g={:.2f} r={:.2f} z={:.2f} W1={:.2f} zfiber={:.2f}'.format(
-                    redshifts['gmag'][coadd_index], redshifts['rmag'][coadd_index], redshifts['zmag'][coadd_index], redshifts['w1mag'][coadd_index], redshifts['zfibermag'][coadd_index])
-                plot_label += '\nRedshift={:.4f}  TYPE={}  ZWARN={}  DELTACHI2={:.1f}'.format(
-                    z, redshifts['SPECTYPE'][coadd_index], redshifts['ZWARN'][coadd_index], redshifts['DELTACHI2'][coadd_index])
+        if label is not None:
+            plot_label = label
         else:
-            plot_label = None
+            plot_label = 'TARGETID={}'.format(tid)
+            plot_label += '  g={:.2f} r={:.2f} z={:.2f} W1={:.2f} zfiber={:.2f}'.format(
+                redshifts['gmag'][coadd_index], redshifts['rmag'][coadd_index], redshifts['zmag'][coadd_index], redshifts['w1mag'][coadd_index], redshifts['zfibermag'][coadd_index])
+            plot_label += '\nRedshift={:.4f}  TYPE={}  ZWARN={}  DELTACHI2={:.1f}'.format(
+                z, redshifts['SPECTYPE'][coadd_index], redshifts['ZWARN'][coadd_index], redshifts['DELTACHI2'][coadd_index])
 
-        ax1.plot(wave, flux_smooth, lw=lw, label='data', color='C0')
+        if camera=='B' or camera=='BRZ':
+            label_data, label_model = 'data', 'best-fit model'
+        else:
+            label_data, label_model = None, None
+        ax1.plot(wave, flux_smooth, lw=lw, label=label_data, color='C0')
         if show_model:
             if gauss_smooth==0 or gauss_smooth is None:
                 model_flux_smooth = model_flux[camera].copy()
             elif gauss_smooth>0:
                 # model_flux_smooth = gaussian_filter1d(model_flux[camera], gauss_smooth, mode='constant', cval=0)
                 model_flux_smooth = convolve(model_flux[camera], gauss_kernel, boundary='extend')
-            ax1.plot(wave, model_flux_smooth, lw=3, color='r', alpha=0.4, label='best-fit model')
+            ax1.plot(wave, model_flux_smooth, lw=3, color='r', alpha=0.4, label=label_model)
         ymin = np.minimum(ymin, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 1.))
         ymax = np.maximum(ymax, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 99.))
 
