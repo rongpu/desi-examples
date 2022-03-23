@@ -13,7 +13,7 @@ params = {'legend.fontsize': 'x-large',
          'axes.titlesize': 'x-large',
          'xtick.labelsize': 'x-large',
          'ytick.labelsize': 'x-large',
-         'figure.facecolor': 'w'} 
+         'figure.facecolor': 'w'}
 plt.rcParams.update(params)
 
 
@@ -227,7 +227,11 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             label_data, label_model = 'data', 'best-fit model'
         else:
             label_data, label_model = None, None
-        ax1.plot(wave, flux_smooth, lw=lw, label=label_data, color='C0')
+        if camera=='BRZ':
+            color = 'C0'
+        else:
+            color = None
+        ax1.plot(wave, flux_smooth, lw=lw, label=label_data, color=color)
         if show_model:
             if gauss_smooth==0 or gauss_smooth is None:
                 model_flux_smooth = model_flux[camera].copy()
