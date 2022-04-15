@@ -1,4 +1,4 @@
-# Get NEXP_GRZ values for a catalog
+# Get NGOOD_GRZ values for a catalog
 # Examples:
 # srun -N 1 -C haswell -c 64 -t 04:00:00 -q interactive python read_pixel_nexp.py --input catalog.fits --output catalog_nexp.fits
 # srun -N 1 -C haswell -c 64 -t 04:00:00 -q interactive python read_pixel_nexp.py --input /global/cfs/cdirs/desi/target/catalogs/dr9/0.49.0/randoms/resolve/randoms-1-0.fits --output $CSCRATCH/temp/randoms-1-0-nexp.fits
@@ -90,9 +90,9 @@ def wrapper(bid_index):
 
     data = Table()
     data['idx'] = idx
-    data['NEXP_G'] = n_g
-    data['NEXP_R'] = n_r
-    data['NEXP_Z'] = n_z
+    data['NGOOD_G'] = n_g
+    data['NGOOD_R'] = n_r
+    data['NGOOD_Z'] = n_z
 
     return data
 
