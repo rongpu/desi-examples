@@ -86,7 +86,8 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cam
 
 def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cameras=False,
     show_lines=True, show_restframe=True, show_model=True, figsize=(22, 5), lw=1.2, gauss_smooth=3,
-    label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim=None, grid=False):
+    label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim=None, grid=False,
+    save_path=None):
     '''
     Plot DESI spectrum.
 
@@ -132,7 +133,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     ['D1', 5895.92, 1],
 
     # Major emission lines
-    [r'Ly$alpha$', 1215.67, 0],
+    [r'Ly$\alpha$', 1215.67, 0],
     ['C IV', 1549.48, 0],
     ['C III]', 1908.734, 0],
     ['Mg II', 2796.3543, 0],
@@ -273,7 +274,8 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     ax2.xaxis.set_minor_locator(AutoMinorLocator())
     ax2.tick_params(which='both', direction="in")
     plt.tight_layout()
-    # plt.savefig('/global/cfs/cdirs/desi/users/rongpu/plots/lrg_speed/spectra_low_speed_failures/{}_deep.png'.format(tid))
+    if save_path is not None:
+        plt.savefig(save_path)
     if show:
         plt.show()
 
