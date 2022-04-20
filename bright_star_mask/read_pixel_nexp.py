@@ -24,10 +24,6 @@ data_dir = '/global/cfs/cdirs/cosmo/data/legacysurvey/dr9'
 
 n_processes = 32
 
-##################
-debug = False
-##################
-
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', required=True)
 parser.add_argument('-o', '--output', required=True)
@@ -99,11 +95,6 @@ def wrapper(bid_index):
 
 # bricks = Table(fitsio.read('/global/cfs/cdirs/cosmo/data/legacysurvey/dr9/survey-bricks.fits.gz'))
 bricks = Table(fitsio.read('/global/cfs/cdirs/cosmo/data/legacysurvey/dr9/randoms/survey-bricks-dr9-randoms-0.48.0.fits'))
-
-if debug:
-    rows = np.arange(int(1e3))
-else:
-    rows = None
 
 try:
     cat = Table(fitsio.read(input_path, rows=None, columns=['RA', 'DEC', 'BRICKID']))
