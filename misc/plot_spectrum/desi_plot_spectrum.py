@@ -87,7 +87,7 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cam
 def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cameras=False,
     show_lines=True, show_restframe=True, show_model=True, figsize=(22, 5), lw=1.2, gauss_smooth=3,
     label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim=None, grid=False,
-    save_path=None):
+    save_path=None, mags=None):
     '''
     Plot DESI spectrum.
 
@@ -176,17 +176,19 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     redshifts = hstack([redshifts, fibermap])
     z = redshifts['Z'][coadd_index]
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        redshifts['gmag'] = 22.5 - 2.5*np.log10(redshifts['FLUX_G']) - 3.214 * redshifts['EBV']
-        redshifts['rmag'] = 22.5 - 2.5*np.log10(redshifts['FLUX_R']) - 2.165 * redshifts['EBV']
-        redshifts['zmag'] = 22.5 - 2.5*np.log10(redshifts['FLUX_Z']) - 1.211 * redshifts['EBV']
-        redshifts['w1mag'] = 22.5 - 2.5*np.log10(redshifts['FLUX_W1']) - 0.184 * redshifts['EBV']
-        redshifts['w2mag'] = 22.5 - 2.5*np.log10(redshifts['FLUX_W2']) - 0.113 * redshifts['EBV']
-        redshifts['gfibermag'] = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_G']) - 3.214 * redshifts['EBV']
-        redshifts['rfibermag'] = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_R']) - 2.165 * redshifts['EBV']
-        redshifts['zfibermag'] = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_Z']) - 1.211 * redshifts['EBV']
-
+    if mags is None:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            gmag = 22.5 - 2.5*np.log10(redshifts['FLUX_G']) - 3.214 * redshifts['EBV']
+            rmag = 22.5 - 2.5*np.log10(redshifts['FLUX_R']) - 2.165 * redshifts['EBV']
+            zmag = 22.5 - 2.5*np.log10(redshifts['FLUX_Z']) - 1.211 * redshifts['EBV']
+            w1mag = 22.5 - 2.5*np.log10(redshifts['FLUX_W1']) - 0.184 * redshifts['EBV']
+            w2mag = 22.5 - 2.5*np.log10(redshifts['FLUX_W2']) - 0.113 * redshifts['EBV']
+            gfibermag = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_G']) - 3.214 * redshifts['EBV']
+            rfibermag = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_R']) - 2.165 * redshifts['EBV']
+            zfibermag = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_Z']) - 1.211 * redshifts['EBV']
+    else:
+        gmag, rmag, zmag, w1mag, w2mag, gfibermag, rfibermag, zfibermag = mags
     ymin, ymax = 0., 0.
 
     fig, ax1 = plt.subplots(figsize=figsize)
@@ -219,8 +221,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             plot_label = label
         else:
             plot_label = 'TARGETID={}'.format(tid)
-            plot_label += '  g={:.2f} r={:.2f} z={:.2f} W1={:.2f} zfiber={:.2f}'.format(
-                redshifts['gmag'][coadd_index], redshifts['rmag'][coadd_index], redshifts['zmag'][coadd_index], redshifts['w1mag'][coadd_index], redshifts['zfibermag'][coadd_index])
+            plot_label += '  g={:.2f} r={:.2f} z={:.2f} W1={:.2f} zfiber={:.2f}'.format(gmag, rmag, zmag, w1mag, zfibermag)
             plot_label += '\nRedshift={:.4f}  TYPE={}  ZWARN={}  DELTACHI2={:.1f}'.format(
                 z, redshifts['SPECTYPE'][coadd_index], redshifts['ZWARN'][coadd_index], redshifts['DELTACHI2'][coadd_index])
 
