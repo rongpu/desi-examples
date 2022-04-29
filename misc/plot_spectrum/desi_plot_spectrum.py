@@ -179,14 +179,14 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     if mags is None:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            gmag = 22.5 - 2.5*np.log10(redshifts['FLUX_G']) - 3.214 * redshifts['EBV']
-            rmag = 22.5 - 2.5*np.log10(redshifts['FLUX_R']) - 2.165 * redshifts['EBV']
-            zmag = 22.5 - 2.5*np.log10(redshifts['FLUX_Z']) - 1.211 * redshifts['EBV']
-            w1mag = 22.5 - 2.5*np.log10(redshifts['FLUX_W1']) - 0.184 * redshifts['EBV']
-            w2mag = 22.5 - 2.5*np.log10(redshifts['FLUX_W2']) - 0.113 * redshifts['EBV']
-            gfibermag = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_G']) - 3.214 * redshifts['EBV']
-            rfibermag = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_R']) - 2.165 * redshifts['EBV']
-            zfibermag = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_Z']) - 1.211 * redshifts['EBV']
+            gmag = 22.5 - 2.5*np.log10(redshifts['FLUX_G'][coadd_index]) - 3.214 * redshifts['EBV'][coadd_index]
+            rmag = 22.5 - 2.5*np.log10(redshifts['FLUX_R'][coadd_index]) - 2.165 * redshifts['EBV'][coadd_index]
+            zmag = 22.5 - 2.5*np.log10(redshifts['FLUX_Z'][coadd_index]) - 1.211 * redshifts['EBV'][coadd_index]
+            w1mag = 22.5 - 2.5*np.log10(redshifts['FLUX_W1'][coadd_index]) - 0.184 * redshifts['EBV'][coadd_index]
+            w2mag = 22.5 - 2.5*np.log10(redshifts['FLUX_W2'][coadd_index]) - 0.113 * redshifts['EBV'][coadd_index]
+            gfibermag = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_G'][coadd_index]) - 3.214 * redshifts['EBV'][coadd_index]
+            rfibermag = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_R'][coadd_index]) - 2.165 * redshifts['EBV'][coadd_index]
+            zfibermag = 22.5 - 2.5*np.log10(redshifts['FIBERFLUX_Z'][coadd_index]) - 1.211 * redshifts['EBV'][coadd_index]
     else:
         gmag, rmag, zmag, w1mag, w2mag, gfibermag, rfibermag, zfibermag = mags
     ymin, ymax = 0., 0.
