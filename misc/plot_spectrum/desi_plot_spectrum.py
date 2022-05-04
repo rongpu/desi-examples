@@ -17,7 +17,7 @@ params = {'legend.fontsize': 'x-large',
 plt.rcParams.update(params)
 
 
-def get_rr_model(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cameras=False, restframe=False, z=None, return_z=False):
+def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=False, coadd_cameras=False, restframe=False, z=None, return_z=False):
     '''
     Return redrock model spectrum.
 
@@ -40,6 +40,11 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cam
     import redrock.templates
     from desispec.io import read_spectra
 
+    templates = dict()
+    for filename in redrock.templates.find_templates():
+        tx = redrock.templates.Template(filename)
+        templates[(tx.template_type, tx.sub_type)] = tx
+
     spec = read_spectra(coadd_fn)
 
     if redrock_fn is None:
@@ -47,19 +52,28 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cam
     redshifts = Table(fitsio.read(redrock_fn, ext='REDSHIFTS'))
 
     if use_targetid:
+        tid = index
         coadd_index = np.where(redshifts['TARGETID']==index)[0][0]
     else:
+        tid = redshifts['TARGETID'][index]
         coadd_index = index
-    if z is None:
-        z = redshifts['Z'][coadd_index]
 
-    templates = dict()
-    for filename in redrock.templates.find_templates():
-        tx = redrock.templates.Template(filename)
-        templates[(tx.template_type, tx.sub_type)] = tx
-
-    tx = templates[(redshifts['SPECTYPE'][coadd_index], redshifts['SUBTYPE'][coadd_index])]
-    coeff = redshifts['COEFF'][coadd_index][0:tx.nbasis]
+        if ith_bestfit==1:
+            spectype, subtype = redshifts['SPECTYPE'][coadd_index], redshifts['SUBTYPE'][coadd_index]
+            tx = templates[(spectype, subtype)]
+            coeff = redshifts['COEFF'][coadd_index][0:tx.nbasis]
+            if z is None:
+                z = redshifts['Z'][coadd_index]
+        else:
+            import h5py
+            rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
+            f = h5py.File(rrdetails_fn)
+            entry = f['zfit'][str(tid)]["zfit"]
+            spectype, subtype = entry['spectype'][ith_bestfit].decode("utf-8"), entry['subtype'][ith_bestfit].decode("utf-8")
+            tx = templates[(spectype, subtype)]
+            coeff = entry['coeff'][ith_bestfit][0:tx.nbasis]
+            if z is None:
+                z = entry['z'][ith_bestfit]
 
     if restframe==False:
         wave = dict()
@@ -85,8 +99,8 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cam
 
 
 def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cameras=False,
-    show_lines=True, show_restframe=True, show_model=True, figsize=(22, 5), lw=1.2, gauss_smooth=3,
-    label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim=None, grid=False,
+    show_lines=True, show_restframe=True, show_model=True, ith_bestfit=1, gauss_smooth=3, figsize=(22, 5),
+    lw=1.2, label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim=None, grid=False,
     save_path=None, mags=None):
     '''
     Plot DESI spectrum.
@@ -124,6 +138,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     # }
     
     lines = [
+
     # Major absorption lines
     ['K', 3933.7, 1],
     ['H', 3968.5, 2],
@@ -166,7 +181,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
 
     if show_model:
         # Get model spectrum
-        _, model_flux = get_rr_model(coadd_fn, coadd_index, redrock_fn=redrock_fn, coadd_cameras=coadd_cameras)
+        _, model_flux = get_rr_model(coadd_fn, coadd_index, redrock_fn=redrock_fn, ith_bestfit=ith_bestfit, coadd_cameras=coadd_cameras)
 
     if redrock_fn is None:
         redrock_fn = coadd_fn.replace('/coadd-', '/redrock-')
@@ -174,7 +189,19 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     fibermap = Table(fitsio.read(redrock_fn, ext='FIBERMAP'))
     fibermap.remove_column('TARGETID')
     redshifts = hstack([redshifts, fibermap])
-    z = redshifts['Z'][coadd_index]
+
+    if ith_bestfit==1:
+        z = redshifts['Z'][coadd_index]
+        spectype, subtype = redshifts['SPECTYPE'][coadd_index], redshifts['SUBTYPE'][coadd_index]
+        zwarn, deltachi2 = redshifts['ZWARN'][coadd_index], redshifts['DELTACHI2'][coadd_index]
+    else:
+        import h5py
+        rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
+        f = h5py.File(rrdetails_fn)
+        entry = f['zfit'][str(tid)]["zfit"]
+        z = entry['z'][ith_bestfit]
+        spectype, subtype = entry['spectype'][ith_bestfit].decode("utf-8"), entry['subtype'][ith_bestfit].decode("utf-8")
+        zwarn, deltachi2 = entry['zwarn'][ith_bestfit], entry['deltachi2'][ith_bestfit]
 
     if mags is None:
         with warnings.catch_warnings():
@@ -222,8 +249,11 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
         else:
             plot_label = 'TARGETID={}'.format(tid)
             plot_label += '  g={:.2f} r={:.2f} z={:.2f} W1={:.2f} zfiber={:.2f}'.format(gmag, rmag, zmag, w1mag, zfibermag)
-            plot_label += '\nRedshift={:.4f}  TYPE={}  ZWARN={}  DELTACHI2={:.1f}'.format(
-                z, redshifts['SPECTYPE'][coadd_index], redshifts['ZWARN'][coadd_index], redshifts['DELTACHI2'][coadd_index])
+            type_text = 'TYPE={}'.format(spectype)
+            if spectype=='STAR':
+                type_text += '  SUBTYPE={}'.format(subtype)
+            plot_label += '\nRedshift={:.4f}  {}  ZWARN={}  DELTACHI2={:.1f}'.format(
+                z, type_text, zwarn, deltachi2)
 
         if camera=='B' or camera=='BRZ':
             label_data, label_model = 'data', 'best-fit model'
@@ -290,5 +320,4 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
 # coadd_fn = '/global/cfs/cdirs/desi/spectro/redux/everest/tiles/cumulative/80605/20210205/coadd-0-80605-thru20210205.fits'
 # tid = 39627640566453451
 # plot_spectrum(coadd_fn, tid, use_targetid=True)
-
 
