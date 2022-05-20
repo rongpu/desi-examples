@@ -190,6 +190,9 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     fibermap.remove_column('TARGETID')
     redshifts = hstack([redshifts, fibermap])
 
+    if 'FIBER' in redshifts.colnames:
+        fiber = redshifts['FIBER'][coadd_index]
+
     if ith_bestfit==1:
         z = redshifts['Z'][coadd_index]
         spectype, subtype = redshifts['SPECTYPE'][coadd_index], redshifts['SUBTYPE'][coadd_index]
@@ -254,6 +257,8 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
                 type_text += '  SUBTYPE={}'.format(subtype)
             plot_label += '\nRedshift={:.4f}  {}  ZWARN={}  DELTACHI2={:.1f}'.format(
                 z, type_text, zwarn, deltachi2)
+            if 'FIBER' in redshifts.colnames:
+                plot_label += '  FIBER={}'.format(fiber)
 
         if camera=='B' or camera=='BRZ':
             label_data, label_model = 'data', 'best-fit model'
@@ -285,7 +290,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
                 text_yposition += 0.05*(ylim[1]-ylim[0])*text_offset
                 ax1.text(line_wavelength*(1+z)+7, text_yposition, line_name, fontsize=plt.rcParams['legend.fontsize'])
     ax1.text(3450, 0.04*ylim[0]+0.96*ylim[1], plot_label, verticalalignment='top',
-            fontsize=plt.rcParams['legend.fontsize'], bbox=dict(facecolor='white', alpha=0.7))
+             fontsize=plt.rcParams['legend.fontsize'], bbox=dict(facecolor='white', alpha=0.7))
     ax1.axis([xlim[0], xlim[1], ylim[0], ylim[1]])
     ax1.set_xlabel('observed wavelength ($\AA$)')
     # plt.axvline(4000, ls='--', lw=1, color='k')
