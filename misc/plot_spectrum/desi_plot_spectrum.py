@@ -58,22 +58,22 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
         tid = redshifts['TARGETID'][index]
         coadd_index = index
 
-        if ith_bestfit==1:
-            spectype, subtype = redshifts['SPECTYPE'][coadd_index], redshifts['SUBTYPE'][coadd_index]
-            tx = templates[(spectype, subtype)]
-            coeff = redshifts['COEFF'][coadd_index][0:tx.nbasis]
-            if z is None:
-                z = redshifts['Z'][coadd_index]
-        else:
-            import h5py
-            rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
-            f = h5py.File(rrdetails_fn)
-            entry = f['zfit'][str(tid)]["zfit"]
-            spectype, subtype = entry['spectype'][ith_bestfit].decode("utf-8"), entry['subtype'][ith_bestfit].decode("utf-8")
-            tx = templates[(spectype, subtype)]
-            coeff = entry['coeff'][ith_bestfit][0:tx.nbasis]
-            if z is None:
-                z = entry['z'][ith_bestfit]
+    if ith_bestfit==1:
+        spectype, subtype = redshifts['SPECTYPE'][coadd_index], redshifts['SUBTYPE'][coadd_index]
+        tx = templates[(spectype, subtype)]
+        coeff = redshifts['COEFF'][coadd_index][0:tx.nbasis]
+        if z is None:
+            z = redshifts['Z'][coadd_index]
+    else:
+        import h5py
+        rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
+        f = h5py.File(rrdetails_fn)
+        entry = f['zfit'][str(tid)]["zfit"]
+        spectype, subtype = entry['spectype'][ith_bestfit].decode("utf-8"), entry['subtype'][ith_bestfit].decode("utf-8")
+        tx = templates[(spectype, subtype)]
+        coeff = entry['coeff'][ith_bestfit][0:tx.nbasis]
+        if z is None:
+            z = entry['z'][ith_bestfit]
 
     if restframe==False:
         wave = dict()
