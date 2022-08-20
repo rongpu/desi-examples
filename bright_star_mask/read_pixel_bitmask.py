@@ -1,8 +1,9 @@
 # Get bitmask values from pixel-level per-brick masks for a catalog
 # Examples:
-# srun -N 1 -C haswell -c 64 -t 04:00:00 -q interactive python read_pixel_bitmask.py --tracer lrg --input catalog.fits --output catalog_lrgmask_v1.1.npy
-# srun -N 1 -C haswell -c 64 -t 04:00:00 -q interactive python read_pixel_bitmask.py --tracer lrg --input /global/cfs/cdirs/desi/target/catalogs/dr9/0.49.0/randoms/resolve/randoms-1-0.fits --output $CSCRATCH/temp/randoms-1-0-lrgmask_v1.1.fits
-# srun -N 1 -C haswell -c 64 -t 04:00:00 -q interactive python read_pixel_bitmask.py --tracer lrg --input /global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.0.0/resolve/dr9_lrg_south_1.0.0_basic.fits --output $CSCRATCH/temp/dr9_lrg_south_1.0.0_lrgmask_v1.1.fits
+# srun -N 1 -C cpu -c 256 -t 04:00:00 -q interactive python read_pixel_bitmask.py --tracer lrg --input catalog.fits --output catalog_lrgmask_v1.1.npy
+# srun -N 1 -C cpu -c 256 -t 04:00:00 -q interactive python read_pixel_bitmask.py --tracer lrg --input /global/cfs/cdirs/desi/target/catalogs/dr9/0.49.0/randoms/resolve/randoms-1-0.fits --output $/global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/randoms/0.49.0/randoms-1-0-lrgmask_v1.1.fits.gz
+# srun -N 1 -C cpu -c 256 -t 04:00:00 -q interactive python read_pixel_bitmask.py --tracer lrg --input /global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_lrg_1.1.1_basic.fits --output /global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_lrg_1.1.1_lrgmask_v1.1.fits.gz
+# srun -N 1 -C cpu -c 256 -t 04:00:00 -q interactive python read_pixel_bitmask.py --tracer elg --input /global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_elg_1.1.1_basic.fits --output /global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_elg_1.1.1_elgmask_v1.fits.gz
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc
@@ -20,7 +21,7 @@ import argparse
 
 time_start = time.time()
 
-n_processes = 32
+n_processes = 256
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-t', '--tracer', required=True)
@@ -39,9 +40,6 @@ if version=='none':
     version = version_dict[tracer]
 
 bitmask_dir = '/global/cfs/cdirs/desi/survey/catalogs/brickmasks/{}/{}'.format(tracer.upper(), version)
-
-# input_path = '/global/cfs/cdirs/desi/target/catalogs/dr9/0.49.0/randoms/resolve/randoms-1-0.fits'
-# output_path = '/global/cscratch1/sd/rongpu/temp/randoms-1-0-lrgmask_v1.fits'
 
 if os.path.isfile(output_path):
     raise ValueError(output_path+' already exists!')
@@ -129,7 +127,7 @@ res = vstack(res)
 res.sort('idx')
 res.remove_column('idx')
 
-if output_path.endswith('.fits'):
+if output_path.endswith('.fits') or output_path.endswith('.fits.gz'):
     res.write(output_path)
 else:
     np.write(output_path, np.array(res['{}_mask'.format(tracer)]))

@@ -1,4 +1,4 @@
-# srun -N 1 -C haswell -c 64 -t 04:00:00 -L cfs -q interactive python compute_systematics_maps.py south
+# srun -N 1 -C cpu -c 256 -t 04:00:00 -L cfs -q interactive python compute_systematics_maps.py south
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc
@@ -22,25 +22,27 @@ if field=='south':
 elif field=='north':
     photsys = 'N'
 
-min_nobs = 2
+min_nobs = 1
 # maskbits = sorted([1, 13])
 # maskbits = sorted([1, 12, 13])
 # maskbits = sorted([1, 11, 12, 13])
 # maskbits = sorted([1, 8, 9, 11, 12, 13])
+# custom_mask_name = ''
 
 maskbits = []
-apply_lrgmask = True
-if apply_lrgmask:
-    lrgmask_str = '_lrgmask_v1'
-else:
-    lrgmask_str = ''
+# custom_mask_name = 'lrgmask_v1.1'
+custom_mask_name = 'elgmask_v1'
+
+mask_str = ''.join([str(tmp) for tmp in maskbits])
+if custom_mask_name!='':
+    mask_str += '_' + custom_mask_name
 
 n_randoms_catalogs = 8
 
-n_processes = 32
+n_processes = 128
 
-nsides = [64, 128, 256, 512, 1024]
-# nsides = [512]
+# nsides = [64, 128, 256, 512, 1024]
+nsides = [64, 128, 256, 512]
 
 randoms_columns = ['RA', 'DEC', 'NOBS_G', 'NOBS_R', 'NOBS_Z', 'MASKBITS', 'PHOTSYS',
                    'GALDEPTH_G', 'GALDEPTH_R', 'GALDEPTH_Z',
@@ -55,14 +57,14 @@ randoms_paths = randoms_paths[:n_randoms_catalogs]
 
 randoms_density = 2500
 
-lrgmask_dir = '/global/cfs/cdirs/desi/users/rongpu/desi_mask/lrgmask_v1/randoms'
+mask_dir = os.path.join('/global/cfs/cdirs/desi/users/rongpu/desi_mask/randoms/', custom_mask_name)
 
 output_dir = '/global/cfs/cdirs/desi/users/rongpu/data/imaging_sys/randoms_stats/0.49.0/{}/systematics'.format(resolve)
 
 hp_columns = ['EBV', 'galdepth_gmag', 'galdepth_rmag', 'galdepth_zmag', 'psfdepth_gmag', 'psfdepth_rmag', 'psfdepth_zmag', 'psfdepth_w1mag', 'psfdepth_w2mag', 'galdepth_gmag_ebv', 'galdepth_rmag_ebv', 'galdepth_zmag_ebv', 'psfdepth_gmag_ebv', 'psfdepth_rmag_ebv', 'psfdepth_zmag_ebv', 'psfdepth_w1mag_ebv', 'psfdepth_w2mag_ebv', 'PSFSIZE_G', 'PSFSIZE_R', 'PSFSIZE_Z', 'NOBS_G', 'NOBS_R', 'NOBS_Z']
 
 
-def apply_mask(randoms, min_nobs, maskbits):
+def apply_mask(randoms, min_nobs, maskbits, custom_mask_name):
 
     mask = (randoms['NOBS_G']>=min_nobs) & (randoms['NOBS_R']>=min_nobs) & (randoms['NOBS_Z']>=min_nobs)
 
@@ -70,6 +72,10 @@ def apply_mask(randoms, min_nobs, maskbits):
     for bit in maskbits:
         mask_clean &= (randoms['MASKBITS'] & 2**bit)==0
     # print(np.sum(~mask_clean)/len(mask_clean))
+
+    if custom_mask_name!='':
+        mask_col = custom_mask_name[: custom_mask_name.find("mask")]+'_mask'
+        mask_clean &= randoms[mask_col]==0
 
     mask &= mask_clean
 
@@ -119,12 +125,10 @@ if __name__ == '__main__':
         for col in randoms_columns:
             randoms[col] = np.copy(hdu[1].data[col])
 
-        if apply_lrgmask:
-            lrgmask_path = os.path.join(lrgmask_dir, os.path.basename(randoms_path).replace('.fits', '-lrgmask_v1.fits'))
-            lrgmask = Table(fitsio.read(lrgmask_path))
-            randoms = hstack([randoms, lrgmask], join_type='exact')
-            mask = randoms['lrg_mask']==0
-            randoms = randoms[mask]
+        if custom_mask_name!='':
+            mask_path = os.path.join(mask_dir, os.path.basename(randoms_path).replace('.fits', '-{}.fits.gz'.format(custom_mask_name)))
+            custom_mask = Table(fitsio.read(mask_path))
+            randoms = hstack([randoms, custom_mask], join_type='exact')
 
         # print(len(randoms))
 
@@ -135,7 +139,7 @@ if __name__ == '__main__':
             mask = randoms['PHOTSYS']==photsys
             randoms = randoms[mask]
 
-        mask = apply_mask(randoms, min_nobs, maskbits)
+        mask = apply_mask(randoms, min_nobs, maskbits, custom_mask_name)
         randoms = randoms[mask]
 
         randoms_stack.append(randoms)
@@ -165,7 +169,7 @@ if __name__ == '__main__':
 
     for nside in nsides:
 
-        output_path = os.path.join(output_dir, 'systematics_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format(field, nside, min_nobs, ''.join([str(tmp) for tmp in maskbits])+lrgmask_str))
+        output_path = os.path.join(output_dir, 'systematics_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format(field, nside, min_nobs, mask_str))
         if os.path.isfile(output_path):
             continue
 

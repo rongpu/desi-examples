@@ -1,4 +1,4 @@
-# srun -N 1 -C haswell -c 64 -t 04:00:00 -q interactive python count_randoms.py south
+# srun -N 1 -C cpu -c 256 -t 04:00:00 -q interactive python count_randoms.py south
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc
@@ -24,24 +24,25 @@ elif field=='north':
 
 min_nobs = 1
 # maskbits = sorted([1, 13])
-maskbits = sorted([1, 12, 13])
+# maskbits = sorted([1, 12, 13])
 # maskbits = sorted([1, 11, 12, 13])
 # maskbits = sorted([1, 8, 9, 11, 12, 13])
-apply_lrgmask = False
+# custom_mask_name = ''
 
-# maskbits = []
-# apply_lrgmask = True
+maskbits = []
+custom_mask_name = 'lrgmask_v1.1'
+# custom_mask_name = 'elgmask_v1'
 
-if apply_lrgmask:
-    lrgmask_str = '_lrgmask_v1'
-else:
-    lrgmask_str = ''
+mask_str = ''.join([str(tmp) for tmp in maskbits])
+if custom_mask_name!='':
+    mask_str += '_' + custom_mask_name
 
 n_processes = 32
 
-n_randoms_catalogs = 64  # There are 200 random catalogs in total
+n_randoms_catalogs = 32  # There are 200 random catalogs in total
 
-nsides = [64, 128, 256, 512, 1024]
+# nsides = [64, 128, 256, 512, 1024]
+nsides = [64, 128, 256, 512]
 randoms_columns = ['RA', 'DEC', 'NOBS_G', 'NOBS_R', 'NOBS_Z', 'MASKBITS', 'PHOTSYS']
 
 if resolve=='resolve':
@@ -55,12 +56,12 @@ print(len(randoms_paths))
 
 randoms_density = 2500
 
-lrgmask_dir = '/global/cfs/cdirs/desi/users/rongpu/desi_mask/lrgmask_v1/randoms'
+mask_dir = os.path.join('/global/cfs/cdirs/desi/users/rongpu/desi_mask/randoms/', custom_mask_name)
 
 output_dir = '/global/cfs/cdirs/desi/users/rongpu/data/imaging_sys/randoms_stats/0.49.0/{}/counts'.format(resolve)
 
 
-def apply_mask(randoms, min_nobs, maskbits):
+def apply_mask(randoms, min_nobs, maskbits, custom_mask_name):
 
     mask = (randoms['NOBS_G']>=min_nobs) & (randoms['NOBS_R']>=min_nobs) & (randoms['NOBS_Z']>=min_nobs)
 
@@ -68,6 +69,10 @@ def apply_mask(randoms, min_nobs, maskbits):
     for bit in maskbits:
         mask_clean &= (randoms['MASKBITS'] & 2**bit)==0
     # print(np.sum(~mask_clean)/len(mask_clean))
+
+    if custom_mask_name!='':
+        mask_col = custom_mask_name[: custom_mask_name.find("mask")]+'_mask'
+        mask_clean &= randoms[mask_col]==0
 
     mask &= mask_clean
 
@@ -84,7 +89,7 @@ def count_randoms(randoms_path):
 
     all_exist = True
     for nside in nsides:
-        output_path = os.path.join(output_dir, 'minobs_{}_maskbits_{}'.format(min_nobs, ''.join([str(tmp) for tmp in maskbits])+lrgmask_str), '{}_nside_{}_minobs_{}_maskbits_{}_{}.npy'.format(field, nside, min_nobs, ''.join([str(tmp) for tmp in maskbits])+lrgmask_str, randoms_index_str))
+        output_path = os.path.join(output_dir, 'tmp_minobs_{}_maskbits_{}'.format(min_nobs, mask_str), '{}_nside_{}_minobs_{}_maskbits_{}_{}.npy'.format(field, nside, min_nobs, mask_str, randoms_index_str))
         if not os.path.isfile(output_path):
             all_exist = False
     if all_exist:
@@ -96,12 +101,10 @@ def count_randoms(randoms_path):
     for col in randoms_columns:
         randoms[col] = np.copy(hdu[1].data[col])
 
-    if apply_lrgmask:
-        lrgmask_path = os.path.join(lrgmask_dir, os.path.basename(randoms_path).replace('.fits', '-lrgmask_v1.fits'))
-        lrgmask = Table(fitsio.read(lrgmask_path))
-        randoms = hstack([randoms, lrgmask], join_type='exact')
-        mask = randoms['lrg_mask']==0
-        randoms = randoms[mask]
+    if custom_mask_name!='':
+        mask_path = os.path.join(mask_dir, os.path.basename(randoms_path).replace('.fits', '-{}.fits.gz'.format(custom_mask_name)))
+        custom_mask = Table(fitsio.read(mask_path))
+        randoms = hstack([randoms, custom_mask], join_type='exact')
 
     # print(len(randoms))
 
@@ -112,7 +115,7 @@ def count_randoms(randoms_path):
         mask = randoms['PHOTSYS']==photsys
         randoms = randoms[mask]
 
-    mask = apply_mask(randoms, min_nobs, maskbits)
+    mask = apply_mask(randoms, min_nobs, maskbits, custom_mask_name)
     randoms = randoms[mask]
 
     for nside in nsides:
@@ -126,7 +129,7 @@ def count_randoms(randoms_path):
         pix_count_all = np.zeros(npix, dtype=int)
         pix_count_all[pix_unique] = pix_count
 
-        output_path = os.path.join(output_dir, 'minobs_{}_maskbits_{}'.format(min_nobs, ''.join([str(tmp) for tmp in maskbits])+lrgmask_str), '{}_nside_{}_minobs_{}_maskbits_{}_{}.npy'.format(field, nside, min_nobs, ''.join([str(tmp) for tmp in maskbits])+lrgmask_str, randoms_index_str))
+        output_path = os.path.join(output_dir, 'tmp_minobs_{}_maskbits_{}'.format(min_nobs, mask_str), '{}_nside_{}_minobs_{}_maskbits_{}_{}.npy'.format(field, nside, min_nobs, mask_str, randoms_index_str))
 
         if not os.path.isdir(os.path.dirname(output_path)):
             try:
@@ -158,7 +161,7 @@ if __name__ == '__main__':
 
         print(nside)
 
-        final_output_path = os.path.join(output_dir, 'counts_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format(field, nside, min_nobs, ''.join([str(tmp) for tmp in maskbits])+lrgmask_str))
+        final_output_path = os.path.join(output_dir, 'counts_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format(field, nside, min_nobs, mask_str))
         if os.path.isfile(final_output_path):
             continue
 
@@ -170,7 +173,7 @@ if __name__ == '__main__':
         hp_table['RA'], hp_table['DEC'] = hp.pixelfunc.pix2ang(nside, hp_table['HPXPIXEL'], nest=False, lonlat=True)
         hp_table['n_randoms'] = 0
 
-        output_paths = sorted(glob.glob(os.path.join(output_dir, 'minobs_{}_maskbits_{}'.format(min_nobs, ''.join([str(tmp) for tmp in maskbits])+lrgmask_str), '{}_nside_{}_minobs_{}_maskbits_{}_*.npy'.format(field, nside, min_nobs, ''.join([str(tmp) for tmp in maskbits])+lrgmask_str))))
+        output_paths = sorted(glob.glob(os.path.join(output_dir, 'tmp_minobs_{}_maskbits_{}'.format(min_nobs, mask_str), '{}_nside_{}_minobs_{}_maskbits_{}_*.npy'.format(field, nside, min_nobs, mask_str))))
         print(len(output_paths))
 
         for output_path in output_paths:

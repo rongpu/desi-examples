@@ -1,3 +1,4 @@
+# The the pixel-level NOBS instead of the tractor NOBS
 # Example:
 # python compute_density_variations.py LRG south
 
@@ -17,35 +18,38 @@ field = field.lower()
 
 min_nobs = 1
 
-use_combined_catalog = True
+target_bits = {'LRG': 0, 'ELG': 1, 'ELG_LOP': 5, 'QSO': 2, 'BGS_ANY': 60, 'BGS_BRIGHT': 1}
 
-target_bits = {'LRG': 0, 'ELG': 1, 'QSO': 2, 'BGS_ANY': 60, 'BGS_BRIGHT': 1}
+# maskbits_dict = {'LRG': [1, 12, 13], 'ELG': [1, 12, 13], 'ELG_LOP': [1, 12, 13], 'QSO': [1, 12, 13], 'BGS_ANY': [1, 13], 'BGS_BRIGHT': [1, 13]}  # The maskbits in desitarget
 # maskbits_dict = {'LRG': [1, 8, 9, 11, 12, 13], 'ELG': [1, 11, 12, 13], 'QSO': [1, 8, 9, 11, 12, 13], 'BGS_ANY': [1, 13], 'BGS_BRIGHT': [1, 13]}
-maskbits_dict = {'LRG': [1, 12, 13], 'ELG': [1, 12, 13], 'QSO': [1, 12, 13], 'BGS_ANY': [1, 13], 'BGS_BRIGHT': [1, 13]}  # The maskbits in desitarget
-# maskbits_dict = {'LRG': [], 'ELG': [1, 11, 12, 13], 'QSO': [1, 8, 9, 11, 12, 13], 'BGS_ANY': [1, 13], 'BGS_BRIGHT': [1, 13]}
-apply_lrgmask = False
-# apply_lrgmask = True
+# custom_mask_dict = {'LRG': '', 'ELG': '', 'ELG_LOP': '', 'QSO': '', 'BGS_ANY': '', 'BGS_BRIGHT': ''}
 
-if apply_lrgmask:
-    lrgmask_str = '_lrgmask_v1'
-else:
-    lrgmask_str = ''
+maskbits_dict = {'LRG': [], 'ELG': [], 'ELG_LOP': [], 'QSO': [1, 8, 9, 11, 12, 13], 'BGS_ANY': [1, 13], 'BGS_BRIGHT': [1, 13]}
+custom_mask_dict = {'LRG': 'lrgmask_v1.1', 'ELG': 'elgmask_v1', 'ELG_LOP': 'elgmask_v1', 'QSO': '', 'BGS_ANY': '', 'BGS_BRIGHT': ''}
 
-nsides = [64, 128, 256, 512, 1024]
+# nsides = [64, 128, 256, 512, 1024]
+nsides = [64, 128, 256, 512]
 
 target_columns = ['RA', 'DEC', 'NOBS_G', 'NOBS_R', 'NOBS_Z', 'MASKBITS']
+pix_columns = ['PIXEL_NOBS_G', 'PIXEL_NOBS_R', 'PIXEL_NOBS_Z']
 
 if 'BGS' in target_class:
-    target_dir = '/global/cfs/cdirs/desi/target/catalogs/dr9/1.0.0/targets/main/resolve/bright'
+    target_dir = '/global/cfs/cdirs/desi/target/catalogs/dr9/1.1.1/targets/main/resolve/bright'
 else:
-    target_dir = '/global/cfs/cdirs/desi/target/catalogs/dr9/1.0.0/targets/main/resolve/dark'
+    target_dir = '/global/cfs/cdirs/desi/target/catalogs/dr9/1.1.1/targets/main/resolve/dark'
 
-cat_dir = '/global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.0.0/resolve'
+cat_dir = '/global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve'
 
-output_dir = '/global/cfs/cdirs/desi/users/rongpu/data/imaging_sys/density_maps/1.0.0/resolve'
+output_dir = '/global/cfs/cdirs/desi/users/rongpu/data/imaging_sys/density_maps/1.1.1/resolve'
 
 target_bit = target_bits[target_class]
 maskbits = maskbits_dict[target_class]
+custom_mask_name = custom_mask_dict[target_class]
+
+mask_str = ''.join([str(tmp) for tmp in maskbits])
+if custom_mask_name!='':
+    mask_str += '_' + custom_mask_name
+
 
 if field=='south':
     photsys = 'S'
@@ -53,14 +57,19 @@ else:
     photsys = 'N'
 
 
-def apply_mask(cat, min_nobs, maskbits):
+def apply_mask(cat, min_nobs, maskbits, custom_mask_name):
 
     mask = (cat['NOBS_G']>=min_nobs) & (cat['NOBS_R']>=min_nobs) & (cat['NOBS_Z']>=min_nobs)
+    mask = (cat['PIXEL_NOBS_G']>=min_nobs) & (cat['PIXEL_NOBS_R']>=min_nobs) & (cat['PIXEL_NOBS_Z']>=min_nobs)
 
     mask_clean = np.ones(len(cat), dtype=bool)
     for bit in maskbits:
         mask_clean &= (cat['MASKBITS'] & 2**bit)==0
     # print(np.sum(~mask_clean)/len(mask_clean))
+
+    if custom_mask_name!='':
+        mask_col = custom_mask_name[: custom_mask_name.find("mask")]+'_mask'
+        mask_clean &= cat[mask_col]==0
 
     mask &= mask_clean
 
@@ -92,41 +101,26 @@ if __name__ == '__main__':
 
     time_start = time.time()
 
-    if not use_combined_catalog or apply_lrgmask:
-        cat_path = os.path.join(cat_dir, 'dr9_{}_{}_1.0.0_basic.fits'.format(target_class.lower(), field))
-        cat = Table(fitsio.read(cat_path))
-        if apply_lrgmask:
-            lrgmask_path = os.path.join(cat_dir, 'dr9_{}_{}_1.0.0_lrgmask_v1.fits'.format(target_class.lower(), field))
-            lrgmask = Table(fitsio.read(lrgmask_path))
-            cat = hstack([cat, lrgmask], join_type='exact')
-            mask = cat['lrg_mask']==0
-            cat = cat[mask]
-    else:
-        target_path_list = glob.glob(os.path.join(target_dir, 'targets-*.fits'))
-        cat = []
-        for target_path in target_path_list:
-            # print(target_path)
-            if target_class!='BGS_BRIGHT':
-                tmp = fitsio.read(target_path, columns=['DESI_TARGET', 'PHOTSYS'])
-                mask = ((tmp["DESI_TARGET"] & (2**target_bit))!=0) & (tmp['PHOTSYS']==photsys)
-            else:
-                tmp = fitsio.read(target_path, columns=['BGS_TARGET', 'PHOTSYS'])
-                mask = ((tmp["BGS_TARGET"] & (2**target_bit))!=0) & (tmp['PHOTSYS']==photsys)
-            idx = np.where(mask)[0]
-            if len(idx)==0:
-                continue
-            # print(len(idx)/len(tmp), len(idx), len(tmp))
-            cat.append(Table(fitsio.read(target_path, columns=target_columns, rows=idx)))
-        cat = vstack(cat)
+    cat_path = os.path.join(cat_dir, 'dr9_{}_1.1.1_basic.fits'.format(target_class.lower()))
+    cat = Table(fitsio.read(cat_path))
+    photsys_mask = cat['PHOTSYS']==photsys
+    cat = cat[photsys_mask]
+    pix_path = os.path.join(cat_dir, 'dr9_{}_1.1.1_pixel.fits'.format(target_class.lower()))
+    cat_pix = Table(fitsio.read(pix_path))[photsys_mask]
+    cat = hstack([cat, cat_pix], join_type='exact')
+    if custom_mask_name!='':
+        mask_path = os.path.join(cat_dir, 'dr9_{}_1.1.1_{}.fits.gz'.format(target_class.lower(), custom_mask_name))
+        cat_mask = Table(fitsio.read(mask_path))[photsys_mask]
+        cat = hstack([cat, cat_mask], join_type='exact')
 
     print('Loading complete!')
 
-    mask = apply_mask(cat, min_nobs, maskbits)
+    mask = apply_mask(cat, min_nobs, maskbits, custom_mask_name)
     cat = cat[mask]
 
     for nside in nsides:
 
-        output_path = os.path.join(output_dir, 'density_map_{}_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format(target_class.lower(), field, nside, min_nobs, ''.join([str(tmp) for tmp in maskbits])+lrgmask_str))
+        output_path = os.path.join(output_dir, 'density_map_{}_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format(target_class.lower(), field, nside, min_nobs, mask_str))
         if os.path.isfile(output_path):
             continue
 
