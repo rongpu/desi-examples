@@ -26,7 +26,7 @@ default_xsize = {64: 4000, 128: 4000, 256: 6000, 512: 16000}
 
 
 def plot_map(nside, pix, v, vmin=None, vmax=None, cmap='jet', title=None, save_path=None,
-             xsize=None, dpi=None, show=True):
+             xsize=None, dpi=None, show=True, timing=True):
 
     if xsize is None:
         xsize = default_xsize[nside]
@@ -56,8 +56,9 @@ def plot_map(nside, pix, v, vmin=None, vmax=None, cmap='jet', title=None, save_p
     ii = ras.argsort()
     ras, decs = ras[ii], decs[ii]
 
-    print('Start!')
-    time_start = time.time()
+    if timing:
+        time_start = time.time()
+
     projview(mplot, min=vmin, max=vmax,
              rot=(120, 0, 0), cmap='jet', xsize=xsize,
              graticule=True, graticule_labels=True, projection_type="mollweide",
@@ -72,5 +73,7 @@ def plot_map(nside, pix, v, vmin=None, vmax=None, cmap='jet', title=None, save_p
         plt.show()
     else:
         plt.close()
-    print('Done!', time.strftime("%H:%M:%S", time.gmtime(time.time() - time_start)))
+
+    if timing:
+        print('Done!', time.strftime("%H:%M:%S", time.gmtime(time.time() - time_start)))
 

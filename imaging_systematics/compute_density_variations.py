@@ -16,9 +16,16 @@ target_class, field = str(sys.argv[1]), str(sys.argv[2])
 target_class = target_class.upper()
 field = field.lower()
 
-min_nobs = 1
+if target_class=='BGS_BRIGHT':
+    target_class = 'BGS_ANY'
+    sub_class = 'BGS_BRIGHT'
+elif target_class=='ELG_LOP':
+    target_class = 'ELG'
+    sub_class = 'ELG_LOP'
+else:
+    sub_class = target_class
 
-target_bits = {'LRG': 0, 'ELG': 1, 'ELG_LOP': 5, 'QSO': 2, 'BGS_ANY': 60, 'BGS_BRIGHT': 1}
+min_nobs = 1
 
 # maskbits_dict = {'LRG': [1, 12, 13], 'ELG': [1, 12, 13], 'ELG_LOP': [1, 12, 13], 'QSO': [1, 12, 13], 'BGS_ANY': [1, 13], 'BGS_BRIGHT': [1, 13]}  # The maskbits in desitarget
 # maskbits_dict = {'LRG': [1, 8, 9, 11, 12, 13], 'ELG': [1, 11, 12, 13], 'QSO': [1, 8, 9, 11, 12, 13], 'BGS_ANY': [1, 13], 'BGS_BRIGHT': [1, 13]}
@@ -42,7 +49,6 @@ cat_dir = '/global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve'
 
 output_dir = '/global/cfs/cdirs/desi/users/rongpu/data/imaging_sys/density_maps/1.1.1/resolve'
 
-target_bit = target_bits[target_class]
 maskbits = maskbits_dict[target_class]
 custom_mask_name = custom_mask_dict[target_class]
 
@@ -97,7 +103,7 @@ def get_systematics(pix_list):
 if __name__ == '__main__':
 
     print('Start!')
-    print(target_class, field)
+    print(sub_class, field)
 
     time_start = time.time()
 
@@ -113,6 +119,13 @@ if __name__ == '__main__':
         cat_mask = Table(fitsio.read(mask_path))[photsys_mask]
         cat = hstack([cat, cat_mask], join_type='exact')
 
+    if sub_class=='BGS_BRIGHT':
+        mask = cat['BGS_TARGET'] & 2**1 > 0
+        cat = cat[mask]
+    elif sub_class=='ELG_LOP':
+        mask = cat['DESI_TARGET'] & 2**5 > 0
+        cat = cat[mask]
+
     print('Loading complete!')
 
     mask = apply_mask(cat, min_nobs, maskbits, custom_mask_name)
@@ -120,7 +133,7 @@ if __name__ == '__main__':
 
     for nside in nsides:
 
-        output_path = os.path.join(output_dir, 'density_map_{}_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format(target_class.lower(), field, nside, min_nobs, mask_str))
+        output_path = os.path.join(output_dir, 'density_map_{}_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format(sub_class.lower(), field, nside, min_nobs, mask_str))
         if os.path.isfile(output_path):
             continue
 
