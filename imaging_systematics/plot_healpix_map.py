@@ -26,7 +26,7 @@ default_xsize = {64: 4000, 128: 4000, 256: 6000, 512: 16000}
 
 
 def plot_map(nside, pix, v, vmin=None, vmax=None, cmap='jet', title=None, save_path=None,
-             xsize=None, dpi=None, show=True, timing=True):
+             xsize=None, dpi=None, show=True, timing=True, nest=False):
 
     if xsize is None:
         xsize = default_xsize[nside]
@@ -60,8 +60,8 @@ def plot_map(nside, pix, v, vmin=None, vmax=None, cmap='jet', title=None, save_p
         time_start = time.time()
 
     projview(mplot, min=vmin, max=vmax,
-             rot=(120, 0, 0), cmap='jet', xsize=xsize,
-             graticule=True, graticule_labels=True, projection_type="mollweide",
+             rot=(120, 0, 0), cmap=cmap, xsize=xsize,
+             graticule=True, graticule_labels=True, projection_type="mollweide", nest=nest,
              title=title,
              xlabel='RA (deg)', ylabel='Dec (deg)',
              custom_xtick_labels=[r'$240\degree$', r'$180\degree$', r'$120\degree$', r'$60\degree$', r'$0\degree$'],
