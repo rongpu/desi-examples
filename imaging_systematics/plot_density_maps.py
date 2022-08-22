@@ -40,6 +40,7 @@ vrange_dict = {'BGS_ANY': {64: [800, 2000], 128: [650, 2150], 256: [200, 2600], 
                'BGS_BRIGHT': {64: [500, 1200], 128: [350, 1350], 256: [200, 1500], 512: [-200, 1800]},
                'LRG': {64: [300, 900], 128: [200, 1000], 256: [100, 1100], 512: [-200, 1400]},
                'ELG': {64: [1200, 3600], 128: [1200, 3600], 256: [1100, 3700], 512: [600, 4200]},
+               'ELG_LOP': {64: [1000, 2900], 128: [1000, 2900], 256: [900, 3000], 512: [500, 3400]},
                'QSO': {64: [150, 450], 128: [150, 450], 256: [0, 600], 512: [-200, 800]},
                }
 # vrange_dict = {64: [0, 1200], 128: [-200, 1400], 256: [-600, 1800]}
@@ -74,6 +75,10 @@ for target_class in ['BGS_ANY', 'BGS_BRIGHT', 'LRG', 'ELG', 'ELG_LOP', 'QSO']:
         plot_dir = os.path.join(top_plot_dir, '{}_{}_minobs_{}_maskbits_{}'.format(target_class, field, min_nobs, mask_str))
         if not os.path.isdir(plot_dir):
             os.makedirs(plot_dir)
+
+        plot_path = os.path.join(plot_dir, 'density_{}_{}.png'.format(target_class, nside))
+        if os.path.isfile(plot_path):
+            continue
 
         for field in ['north', 'south']:
 
@@ -125,11 +130,6 @@ for target_class in ['BGS_ANY', 'BGS_BRIGHT', 'LRG', 'ELG', 'ELG_LOP', 'QSO']:
         maps = maps[mask]
 
         maps['density'] = maps['n_targets'] / (pix_area * maps['FRACAREA'])
-
-        plot_path = os.path.join(plot_dir, 'density_{}_{}.png'.format(target_class, nside))
-
-        if os.path.isfile(plot_path):
-            continue
 
         plot_map(nside, maps['HPXPIXEL'], maps['density'],
                  vmin=vrange_dict[target_class.upper()][nside][0], vmax=vrange_dict[target_class.upper()][nside][1],
