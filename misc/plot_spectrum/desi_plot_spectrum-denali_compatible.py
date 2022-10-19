@@ -1,5 +1,7 @@
+# Compatible with the file and extension names names in denali
+
 from __future__ import division, print_function
-import sys, os, glob, time, warnings, gc, contextlib
+import sys, os, glob, time, warnings, gc
 import numpy as np
 # import matplotlib
 # matplotlib.use("Agg")
@@ -40,19 +42,21 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
     import redrock.templates
     from desispec.io import read_spectra
 
-    with open(os.devnull, 'w') as devnull:  # supress noise
-        with contextlib.redirect_stdout(devnull):
+    templates = dict()
+    for filename in redrock.templates.find_templates():
+        tx = redrock.templates.Template(filename)
+        templates[(tx.template_type, tx.sub_type)] = tx
 
-            templates = dict()
-            for filename in redrock.templates.find_templates():
-                tx = redrock.templates.Template(filename)
-                templates[(tx.template_type, tx.sub_type)] = tx
-
-            spec = read_spectra(coadd_fn)
+    spec = read_spectra(coadd_fn)
 
     if redrock_fn is None:
         redrock_fn = coadd_fn.replace('/coadd-', '/redrock-')
-    redshifts = Table(fitsio.read(redrock_fn, ext='REDSHIFTS'))
+        if not os.path.isfile(redrock_fn):
+            redrock_fn = redrock_fn.replace('/redrock-', '/zbest-')  # old naming scheme
+    if '/redrock-' in redrock_fn:
+        redshifts = Table(fitsio.read(redrock_fn, ext='REDSHIFTS'))
+    else:
+        redshifts = Table(fitsio.read(redrock_fn, ext='ZBEST'))
 
     if use_targetid:
         tid = index
@@ -70,6 +74,7 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
     else:
         import h5py
         rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
+        rrdetails_fn = redrock_fn.replace('/zbest-', '/redrock-')    # old naming scheme
         f = h5py.File(rrdetails_fn)
         entry = f['zfit'][str(tid)]["zfit"]
         spectype, subtype = entry['spectype'][ith_bestfit].decode("utf-8"), entry['subtype'][ith_bestfit].decode("utf-8")
@@ -177,7 +182,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
 
     if use_targetid:
         tid = index
-        coadd_index = np.where(tmp['TARGETID']==index)[0][0]
+        coadd_index = np.where(tmp['TARGETID']==tid)[0][0]
     else:
         tid = tmp['TARGETID'][index]
         coadd_index = index
@@ -188,7 +193,12 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
 
     if redrock_fn is None:
         redrock_fn = coadd_fn.replace('/coadd-', '/redrock-')
-    redshifts = Table(fitsio.read(redrock_fn, ext='REDSHIFTS'))
+        if not os.path.isfile(redrock_fn):
+            redrock_fn = redrock_fn.replace('/redrock-', '/zbest-')  # old naming scheme
+    if '/redrock-' in redrock_fn:
+        redshifts = Table(fitsio.read(redrock_fn, ext='REDSHIFTS'))
+    else:
+        redshifts = Table(fitsio.read(redrock_fn, ext='ZBEST'))
     fibermap = Table(fitsio.read(redrock_fn, ext='FIBERMAP'))
     fibermap.remove_column('TARGETID')
     redshifts = hstack([redshifts, fibermap])
@@ -203,6 +213,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     else:
         import h5py
         rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
+        rrdetails_fn = redrock_fn.replace('/zbest-', '/redrock-')    # old naming scheme
         f = h5py.File(rrdetails_fn)
         entry = f['zfit'][str(tid)]["zfit"]
         z = entry['z'][ith_bestfit]
