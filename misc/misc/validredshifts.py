@@ -129,7 +129,7 @@ def validate(redrock_path, fiberstatus_cut=True, return_target_columns=False, ex
     return cat
 
 
-def actually_validate(cat, fiberstatus_cut=True, ignore_emline=False):
+def actually_validate(cat, fiberstatus_cut=True, ignore_emline=False, ignore_qso=False):
     '''
     Apply redshift quality criteria
 
@@ -142,6 +142,7 @@ def actually_validate(cat, fiberstatus_cut=True, ignore_emline=False):
         extra_columns: list of str (default None), additional columns to include in the output
         emline_path: str (default None), specify the location of the emline file; by default the emline file is in the same directory as the redrock file
         ignore_emline: bool (default False), if True, ignore the emline file and do not validate the ELG redshift
+        ignore_qso: bool (default False), if True, do not validate the QSO redshift
 
     Returns:
         cat: astropy table with boolean columns (e.g., GOOD_BGS) added
@@ -169,22 +170,23 @@ def actually_validate(cat, fiberstatus_cut=True, ignore_emline=False):
         if fiberstatus_cut:
             cat['GOOD_ELG'] &= get_good_fiberstatus(cat)
 
-    # QSO - adopted from the code from Edmond
-    # https://github.com/echaussidon/LSS/blob/8ca53f4c38cfa29722ee6958687e188cc894ed2b/py/LSS/qso_cat_utils.py#L282
-    cat['IS_QSO_QN'] = np.max(np.array([cat[name] for name in ['C_LYA', 'C_CIV', 'C_CIII', 'C_MgII', 'C_Hbeta', 'C_Halpha']]), axis=0) > 0.95
-    cat['IS_QSO_QN_NEW_RR'] &= cat['IS_QSO_QN']
-    cat['QSO_MASKBITS'] = np.zeros(len(cat), dtype=int)
-    cat['QSO_MASKBITS'][cat['SPECTYPE']=='QSO'] += 2**1
-    cat['QSO_MASKBITS'][cat['IS_QSO_MGII']] += 2**2
-    cat['QSO_MASKBITS'][cat['IS_QSO_QN']] += 2**3
-    cat['QSO_MASKBITS'][cat['IS_QSO_QN_NEW_RR']] += 2**4
-    cat['Z'][cat['IS_QSO_QN_NEW_RR']] = cat['Z_NEW'][cat['IS_QSO_QN_NEW_RR']].copy()
-    cat['ZERR'][cat['IS_QSO_QN_NEW_RR']] = cat['ZERR_NEW'][cat['IS_QSO_QN_NEW_RR']].copy()
-    # Correct bump at z~3.7
-    sel_pb_redshift = (((cat['Z'] > 3.65) & (cat['Z'] < 3.9)) | ((cat['Z'] > 5.15) & (cat['Z'] < 5.35))) & ((cat['C_LYA'] < 0.95) | (cat['C_CIV'] < 0.95))
-    cat['QSO_MASKBITS'][sel_pb_redshift] = 0
-    cat['GOOD_QSO'] = cat['QSO_MASKBITS']>0
-    if fiberstatus_cut:
-        cat['GOOD_QSO'] &= get_good_fiberstatus(cat, isqso=True)
+    if not ignore_qso:
+        # QSO - adopted from the code from Edmond
+        # https://github.com/echaussidon/LSS/blob/8ca53f4c38cfa29722ee6958687e188cc894ed2b/py/LSS/qso_cat_utils.py#L282
+        cat['IS_QSO_QN'] = np.max(np.array([cat[name] for name in ['C_LYA', 'C_CIV', 'C_CIII', 'C_MgII', 'C_Hbeta', 'C_Halpha']]), axis=0) > 0.95
+        cat['IS_QSO_QN_NEW_RR'] &= cat['IS_QSO_QN']
+        cat['QSO_MASKBITS'] = np.zeros(len(cat), dtype=int)
+        cat['QSO_MASKBITS'][cat['SPECTYPE']=='QSO'] += 2**1
+        cat['QSO_MASKBITS'][cat['IS_QSO_MGII']] += 2**2
+        cat['QSO_MASKBITS'][cat['IS_QSO_QN']] += 2**3
+        cat['QSO_MASKBITS'][cat['IS_QSO_QN_NEW_RR']] += 2**4
+        cat['Z'][cat['IS_QSO_QN_NEW_RR']] = cat['Z_NEW'][cat['IS_QSO_QN_NEW_RR']].copy()
+        cat['ZERR'][cat['IS_QSO_QN_NEW_RR']] = cat['ZERR_NEW'][cat['IS_QSO_QN_NEW_RR']].copy()
+        # Correct bump at z~3.7
+        sel_pb_redshift = (((cat['Z'] > 3.65) & (cat['Z'] < 3.9)) | ((cat['Z'] > 5.15) & (cat['Z'] < 5.35))) & ((cat['C_LYA'] < 0.95) | (cat['C_CIV'] < 0.95))
+        cat['QSO_MASKBITS'][sel_pb_redshift] = 0
+        cat['GOOD_QSO'] = cat['QSO_MASKBITS']>0
+        if fiberstatus_cut:
+            cat['GOOD_QSO'] &= get_good_fiberstatus(cat, isqso=True)
 
     return cat
