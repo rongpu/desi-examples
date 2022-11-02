@@ -47,7 +47,7 @@ def is_in_box(objs, radecbox, ra_col='RA', dec_col='DEC'):
     return ii
 
 
-def read_sweep_columns(sweep_fn, field, pz_dir=None):
+def read_sweep_columns(sweep_fn, field):
 
     cat = Table(fitsio.read(sweep_fn, columns=['OBJID', 'BRICKID', 'RELEASE']))
     targetid = encode_targetid(cat['OBJID'], cat['BRICKID'], cat['RELEASE'])
@@ -142,6 +142,7 @@ def get_sweep_columns(cat, columns, n_processes=128, pz_dir=None):
     mask = np.array([np.any(is_in_box(cat_basic_south, sweep_radec)) for sweep_radec in sweep_radec_list_south])
     sweep_fn_list_south = np.unique(sweep_fn_list_south[mask])
 
+    global pz_dir
     zipped_arg_list = list(zip(sweep_fn_list_north, ['north']*len(sweep_fn_list_north)))
     zipped_arg_list += list(zip(sweep_fn_list_south, ['south']*len(sweep_fn_list_south)))
 
