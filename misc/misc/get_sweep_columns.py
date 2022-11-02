@@ -61,7 +61,6 @@ def read_sweep_columns(sweep_fn, field, pz_dir=None):
 
     if len(sweep_columns)!=0:
         cat = Table(fitsio.read(sweep_fn, rows=idx, columns=sweep_columns))
-        cat['TARGETID'] = targetid
     else:
         cat = Table()
 
@@ -80,6 +79,7 @@ def read_sweep_columns(sweep_fn, field, pz_dir=None):
         pz = Table(fitsio.read(pz_fn, rows=idx, columns=pz_columns))
 
     cat = hstack([cat, cat_extra, pz], join_type='outer')
+    cat['TARGETID'] = targetid
 
     return cat
 
