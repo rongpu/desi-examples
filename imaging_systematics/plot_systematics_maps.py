@@ -95,16 +95,16 @@ for nside in [64, 128, 256, 512]:
     if not os.path.isdir(plot_dir):
         os.makedirs(plot_dir)
 
-    maps = Table.read(os.path.join(randoms_counts_dir, 'counts_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format('north', nside, min_nobs, mask_str)))
+    maps = Table(fitsio.read(os.path.join(randoms_counts_dir, 'counts_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format('north', nside, min_nobs, mask_str))))
     maps = maps[maps['n_randoms']>0]
-    maps1 = Table.read(os.path.join(randoms_systematics_dir, 'systematics_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format('north', nside, min_nobs, mask_str)))
+    maps1 = Table(fitsio.read(os.path.join(randoms_systematics_dir, 'systematics_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format('north', nside, min_nobs, mask_str))))
     maps1.remove_columns(['RA', 'DEC'])
     maps = join(maps, maps1, join_type='inner', keys='HPXPIXEL')
     maps_north = maps.copy()
 
-    maps = Table.read(os.path.join(randoms_counts_dir, 'counts_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format('south', nside, min_nobs, mask_str)))
+    maps = Table(fitsio.read(os.path.join(randoms_counts_dir, 'counts_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format('south', nside, min_nobs, mask_str))))
     maps = maps[maps['n_randoms']>0]
-    maps1 = Table.read(os.path.join(randoms_systematics_dir, 'systematics_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format('south', nside, min_nobs, mask_str)))
+    maps1 = Table(fitsio.read(os.path.join(randoms_systematics_dir, 'systematics_{}_nside_{}_minobs_{}_maskbits_{}.fits'.format('south', nside, min_nobs, mask_str))))
     maps1.remove_columns(['RA', 'DEC'])
     maps = join(maps, maps1, join_type='inner', keys='HPXPIXEL')
     maps_south = maps.copy()
