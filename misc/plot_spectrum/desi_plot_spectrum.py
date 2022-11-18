@@ -182,7 +182,9 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
         tid = tmp['TARGETID'][index]
         coadd_index = index
 
-    if z is not None:
+    z0 = z
+
+    if z0 is not None:
         show_model = False
 
     if show_model:
@@ -199,7 +201,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     if 'FIBER' in redshifts.colnames:
         fiber = redshifts['FIBER'][coadd_index]
 
-    if z is None:
+    if z0 is None:
         if ith_bestfit==1:
             z = redshifts['Z'][coadd_index]
             spectype, subtype = redshifts['SPECTYPE'][coadd_index], redshifts['SUBTYPE'][coadd_index]
@@ -259,7 +261,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
         else:
             plot_label = 'TARGETID={}'.format(tid)
             plot_label += '  g={:.2f} r={:.2f} z={:.2f} W1={:.2f} zfiber={:.2f}'.format(gmag, rmag, zmag, w1mag, zfibermag)
-            if z is not None:
+            if z0 is None:
                 plot_label += '\nRedshift={:.4f}'.format(z)
             else:
                 type_text = 'TYPE={}'.format(spectype)
