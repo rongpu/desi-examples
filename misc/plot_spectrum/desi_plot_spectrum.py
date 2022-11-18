@@ -261,7 +261,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
         else:
             plot_label = 'TARGETID={}'.format(tid)
             plot_label += '  g={:.2f} r={:.2f} z={:.2f} W1={:.2f} zfiber={:.2f}'.format(gmag, rmag, zmag, w1mag, zfibermag)
-            if z0 is None:
+            if z0 is not None:
                 plot_label += '\nRedshift={:.4f}'.format(z)
             else:
                 type_text = 'TYPE={}'.format(spectype)
