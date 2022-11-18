@@ -102,7 +102,7 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
 
 
 def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cameras=False,
-    show_lines=True, show_restframe=True, show_model=True, ith_bestfit=1, gauss_smooth=3, figsize=(22, 5),
+    show_lines=True, show_restframe=True, z=None, show_model=True, ith_bestfit=1, gauss_smooth=3, figsize=(22, 5),
     lw=1.2, label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim=None, grid=False,
     save_path=None, mags=None):
     '''
@@ -182,6 +182,9 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
         tid = tmp['TARGETID'][index]
         coadd_index = index
 
+    if z is not None:
+        show_model = False
+
     if show_model:
         # Get model spectrum
         _, model_flux = get_rr_model(coadd_fn, coadd_index, redrock_fn=redrock_fn, ith_bestfit=ith_bestfit, coadd_cameras=coadd_cameras)
@@ -196,18 +199,19 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     if 'FIBER' in redshifts.colnames:
         fiber = redshifts['FIBER'][coadd_index]
 
-    if ith_bestfit==1:
-        z = redshifts['Z'][coadd_index]
-        spectype, subtype = redshifts['SPECTYPE'][coadd_index], redshifts['SUBTYPE'][coadd_index]
-        zwarn, deltachi2 = redshifts['ZWARN'][coadd_index], redshifts['DELTACHI2'][coadd_index]
-    else:
-        import h5py
-        rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
-        f = h5py.File(rrdetails_fn)
-        entry = f['zfit'][str(tid)]["zfit"]
-        z = entry['z'][ith_bestfit]
-        spectype, subtype = entry['spectype'][ith_bestfit].decode("utf-8"), entry['subtype'][ith_bestfit].decode("utf-8")
-        zwarn, deltachi2 = entry['zwarn'][ith_bestfit], entry['deltachi2'][ith_bestfit]
+    if z is None:
+        if ith_bestfit==1:
+            z = redshifts['Z'][coadd_index]
+            spectype, subtype = redshifts['SPECTYPE'][coadd_index], redshifts['SUBTYPE'][coadd_index]
+            zwarn, deltachi2 = redshifts['ZWARN'][coadd_index], redshifts['DELTACHI2'][coadd_index]
+        else:
+            import h5py
+            rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
+            f = h5py.File(rrdetails_fn)
+            entry = f['zfit'][str(tid)]["zfit"]
+            z = entry['z'][ith_bestfit]
+            spectype, subtype = entry['spectype'][ith_bestfit].decode("utf-8"), entry['subtype'][ith_bestfit].decode("utf-8")
+            zwarn, deltachi2 = entry['zwarn'][ith_bestfit], entry['deltachi2'][ith_bestfit]
 
     if mags is None:
         with warnings.catch_warnings():
@@ -255,11 +259,14 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
         else:
             plot_label = 'TARGETID={}'.format(tid)
             plot_label += '  g={:.2f} r={:.2f} z={:.2f} W1={:.2f} zfiber={:.2f}'.format(gmag, rmag, zmag, w1mag, zfibermag)
-            type_text = 'TYPE={}'.format(spectype)
-            if spectype=='STAR':
-                type_text += '  SUBTYPE={}'.format(subtype)
-            plot_label += '\nRedshift={:.4f}  {}  ZWARN={}  DELTACHI2={:.1f}'.format(
-                z, type_text, zwarn, deltachi2)
+            if z is not None:
+                plot_label += '\nRedshift={:.4f}'.format(z)
+            else:
+                type_text = 'TYPE={}'.format(spectype)
+                if spectype=='STAR':
+                    type_text += '  SUBTYPE={}'.format(subtype)
+                plot_label += '\nRedshift={:.4f}  {}  ZWARN={}  DELTACHI2={:.1f}'.format(
+                    z, type_text, zwarn, deltachi2)
             if 'FIBER' in redshifts.colnames:
                 plot_label += '  FIBER={}'.format(fiber)
 

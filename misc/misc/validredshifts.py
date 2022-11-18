@@ -195,6 +195,6 @@ def actually_validate(cat, fiberstatus_cut=True, ignore_emline=False, ignore_qso
         res['GOOD_QSO'] = res['QSO_MASKBITS']>0
         if fiberstatus_cut:
             res['GOOD_QSO'] &= get_good_fiberstatus(cat, isqso=True)
-        res.remove_columns(['IS_QSO_QN', 'IS_QSO_QN_NEW_RR', 'QSO_MASKBITS', 'Z', 'ZERR'])
+        res.remove_columns(['IS_QSO_QN', 'IS_QSO_QN_NEW_RR', 'QSO_MASKBITS'])
 
     return res
