@@ -243,10 +243,10 @@ def get_stellar_flux(cat):
 
     # with warnings.catch_warnings():
     #     warnings.simplefilter('ignore')
-    #     ffcat['gmag'] = 22.5 - 2.5*np.log10(ffcat['star_flux_g'])
-    #     ffcat['rmag'] = 22.5 - 2.5*np.log10(ffcat['star_flux_r'])
-    #     ffcat['imag'] = 22.5 - 2.5*np.log10(ffcat['star_flux_i'])
-    #     ffcat['zmag'] = 22.5 - 2.5*np.log10(ffcat['star_flux_z'])
+    #     ffcat['stellar_gmag'] = 22.5 - 2.5*np.log10(ffcat['star_flux_g'])
+    #     ffcat['stellar_rmag'] = 22.5 - 2.5*np.log10(ffcat['star_flux_r'])
+    #     ffcat['stellar_imag'] = 22.5 - 2.5*np.log10(ffcat['star_flux_i'])
+    #     ffcat['stellar_zmag'] = 22.5 - 2.5*np.log10(ffcat['star_flux_z'])
 
     print(len(ffcat))
 
