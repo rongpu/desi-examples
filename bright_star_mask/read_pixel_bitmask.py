@@ -56,13 +56,16 @@ def bitmask_radec(brickid, ra, dec):
     elif bricks['PHOTSYS'][brick_index]=='S':
         field = 'south'
     else:
-        # raise ValueError
         # Outside DR9 footprint; assign mask bit 7
         bitmask = np.full(len(ra), 2**7, dtype=np.uint8)
         return bitmask
 
     # bitmask_fn = '/global/cfs/cdirs/cosmo/data/legacysurvey/dr9/{}/coadd/{}/{}/legacysurvey-{}-maskbits.fits.fz'.format(field, brickname[:3], brickname, brickname)
     bitmask_fn = os.path.join(bitmask_dir, '{}/coadd/{}/{}/{}-{}mask.fits.gz'.format(field, brickname[:3], brickname, brickname, tracer))
+    # if not os.path.isfile(bitmask_fn):
+    #     # Outside DR9 footprint; assign mask bit 7
+    #     bitmask = np.full(len(ra), 2**7, dtype=np.uint8)
+    #     return bitmask
 
     bitmask_img = fitsio.read(bitmask_fn)
 

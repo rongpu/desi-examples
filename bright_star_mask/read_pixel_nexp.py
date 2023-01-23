@@ -58,9 +58,18 @@ def bitmask_radec(brickid, ra, dec):
     nexp_r_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-r.fits.fz'.format(field, brickname[:3], brickname, brickname))
     nexp_z_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-z.fits.fz'.format(field, brickname[:3], brickname, brickname))
 
-    nexp_g = fitsio.read(nexp_g_fn)
-    nexp_r = fitsio.read(nexp_r_fn)
-    nexp_z = fitsio.read(nexp_z_fn)
+    if os.path.isfile(nexp_g_fn):
+        nexp_g = fitsio.read(nexp_g_fn)
+    else:
+        nexp_g = np.full(len(ra), 0, dtype=np.int16)
+    if os.path.isfile(nexp_r_fn):
+        nexp_r = fitsio.read(nexp_r_fn)
+    else:
+        nexp_r = np.full(len(ra), 0, dtype=np.int16)
+    if os.path.isfile(nexp_z_fn):
+        nexp_z = fitsio.read(nexp_z_fn)
+    else:
+        nexp_z = np.full(len(ra), 0, dtype=np.int16)
 
     header = fits.open(nexp_g_fn)[1].header
     w = wcs.WCS(header)
