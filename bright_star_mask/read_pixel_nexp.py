@@ -60,18 +60,21 @@ def bitmask_radec(brickid, ra, dec):
 
     if os.path.isfile(nexp_g_fn):
         nexp_g = fitsio.read(nexp_g_fn)
+        nexp_good_fn = nexp_g_fn
     else:
         nexp_g = np.full(len(ra), 0, dtype=np.int16)
     if os.path.isfile(nexp_r_fn):
         nexp_r = fitsio.read(nexp_r_fn)
+        nexp_good_fn = nexp_r_fn
     else:
         nexp_r = np.full(len(ra), 0, dtype=np.int16)
     if os.path.isfile(nexp_z_fn):
         nexp_z = fitsio.read(nexp_z_fn)
+        nexp_good_fn = nexp_z_fn
     else:
         nexp_z = np.full(len(ra), 0, dtype=np.int16)
 
-    header = fits.open(nexp_g_fn)[1].header
+    header = fits.open(nexp_good_fn)[1].header
     w = wcs.WCS(header)
 
     coadd_x, coadd_y = w.wcs_world2pix(ra, dec, 0)
