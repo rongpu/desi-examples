@@ -1,8 +1,8 @@
 # Get PIXEL_NOBS_GRZ values for a catalog
 # Examples:
-# srun -N 1 -C haswell -c 64 -t 04:00:00 -q interactive python read_pixel_nexp.py --input catalog.fits --output catalog_nexp.fits
-# srun -N 1 -C haswell -c 64 -t 04:00:00 -q interactive python read_pixel_nexp.py --input /global/cfs/cdirs/desi/target/catalogs/dr9/0.49.0/randoms/resolve/randoms-1-0.fits --output $CSCRATCH/temp/randoms-1-0-nexp.fits
-# srun -N 1 -C haswell -c 64 -t 04:00:00 -q interactive python read_pixel_nexp.py --input /global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.0.0/resolve/dr9_lrg_south_1.0.0_basic.fits --output $CSCRATCH/temp/dr9_lrg_south_1.0.0_nexp.fits
+# srun -N 1 -C cpu -c 256 -t 04:00:00 -q interactive python read_pixel_nexp.py --input catalog.fits --output catalog_nexp.fits
+# srun -N 1 -C cpu -c 256 -t 04:00:00 -q interactive python read_pixel_nexp.py --input /global/cfs/cdirs/desi/target/catalogs/dr9/0.49.0/randoms/resolve/randoms-1-0.fits --output $CSCRATCH/temp/randoms-1-0-nexp.fits
+# srun -N 1 -C cpu -c 256 -t 04:00:00 -q interactive python read_pixel_nexp.py --input /global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.0.0/resolve/dr9_lrg_south_1.0.0_basic.fits --output $CSCRATCH/temp/dr9_lrg_south_1.0.0_nexp.fits
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc
@@ -22,7 +22,7 @@ time_start = time.time()
 
 data_dir = '/global/cfs/cdirs/cosmo/data/legacysurvey/dr9'
 
-n_processes = 32
+n_processes = 256
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', required=True)
