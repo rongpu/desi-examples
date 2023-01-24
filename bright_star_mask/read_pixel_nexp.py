@@ -62,17 +62,17 @@ def bitmask_radec(brickid, ra, dec):
         nexp_g = fitsio.read(nexp_g_fn)
         nexp_good_fn = nexp_g_fn
     else:
-        nexp_g = np.full(len(ra), 0, dtype=np.int16)
+        n_g = np.full(len(ra), 0, dtype=np.int16)
     if os.path.isfile(nexp_r_fn):
         nexp_r = fitsio.read(nexp_r_fn)
         nexp_good_fn = nexp_r_fn
     else:
-        nexp_r = np.full(len(ra), 0, dtype=np.int16)
+        n_r = np.full(len(ra), 0, dtype=np.int16)
     if os.path.isfile(nexp_z_fn):
         nexp_z = fitsio.read(nexp_z_fn)
         nexp_good_fn = nexp_z_fn
     else:
-        nexp_z = np.full(len(ra), 0, dtype=np.int16)
+        n_z = np.full(len(ra), 0, dtype=np.int16)
 
     header = fits.open(nexp_good_fn)[1].header
     w = wcs.WCS(header)
@@ -80,9 +80,12 @@ def bitmask_radec(brickid, ra, dec):
     coadd_x, coadd_y = w.wcs_world2pix(ra, dec, 0)
     coadd_x, coadd_y = np.round(coadd_x).astype(int), np.round(coadd_y).astype(int)
 
-    n_g = nexp_g[coadd_y, coadd_x]
-    n_r = nexp_r[coadd_y, coadd_x]
-    n_z = nexp_z[coadd_y, coadd_x]
+    if 'n_g' not in locals():
+        n_g = nexp_g[coadd_y, coadd_x]
+    if 'n_r' not in locals():
+        n_r = nexp_r[coadd_y, coadd_x]
+    if 'n_z' not in locals():
+        n_z = nexp_z[coadd_y, coadd_x]
 
     return n_g, n_r, n_z
 
