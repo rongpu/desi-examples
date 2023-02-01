@@ -33,7 +33,7 @@ default_xsize = {32: 1500, 64: 4000, 128: 4000, 256: 6000, 512: 16000}
 
 
 def plot_map(nside, pix, v, vmin=None, vmax=None, cmap='jet', title=None, save_path=None,
-             xsize=None, dpi=None, show=True, timing=True, nest=False):
+             xsize=None, dpi=None, show=True, timing=True, nest=False, coord=None):
 
     if xsize is None:
         xsize = default_xsize[nside]
@@ -67,7 +67,7 @@ def plot_map(nside, pix, v, vmin=None, vmax=None, cmap='jet', title=None, save_p
         time_start = time.time()
 
     projview(mplot, min=vmin, max=vmax,
-             rot=(120, 0, 0), cmap=cmap, xsize=xsize,
+             rot=(120, 0, 0), coord=coord, cmap=cmap, xsize=xsize,
              graticule=True, graticule_labels=True, projection_type="mollweide", nest=nest,
              title=title,
              xlabel='RA (deg)', ylabel='Dec (deg)',
