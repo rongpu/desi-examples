@@ -17,6 +17,8 @@ from astropy import units
 import healpy as hp
 from healpy.newvisufunc import projview, newprojplot
 
+from IPython.display import Image, display
+
 # Font sizes for healpix maps
 fontsize_dict = {
     "xlabel": 9.5,
@@ -77,7 +79,12 @@ def plot_map(nside, pix, v, vmin=None, vmax=None, cmap='jet', title=None, save_p
     if save_path is not None:
         plt.savefig(save_path, bbox_inches="tight", dpi=dpi)
     if show:
-        plt.show()
+        if save_path is not None:
+            tmp = Image("tmp.png")
+            display(tmp)
+            plt.close()
+        else:
+            plt.show()
     else:
         plt.close()
 
