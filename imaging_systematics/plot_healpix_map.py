@@ -34,7 +34,7 @@ default_dpi = {32: 100, 64: 200, 128: 400, 256: 600, 512: 1600}
 default_xsize = {32: 1500, 64: 4000, 128: 4000, 256: 6000, 512: 16000}
 
 
-def plot_map(nside, pix, v, vmin=None, vmax=None, cmap='jet', title=None, save_path=None,
+def plot_map(nside, v, pix=None, vmin=None, vmax=None, cmap='jet', title=None, save_path=None,
              xsize=None, dpi=None, show=True, timing=True, nest=False, coord=None):
 
     if xsize is None:
@@ -48,10 +48,14 @@ def plot_map(nside, pix, v, vmin=None, vmax=None, cmap='jet', title=None, save_p
     v = np.array(v)
 
     # Density map
-    map_values = np.zeros(npix, dtype=v.dtype)
     hp_mask = np.zeros(npix, dtype=bool)
-    map_values[pix] = v
-    hp_mask[pix] = True
+    if pix is None:
+        map_values = v.copy()
+        hp_mask[np.isfinite(map_values)] = True
+    else:
+        map_values = np.zeros(npix, dtype=v.dtype)
+        map_values[pix] = v
+        hp_mask[pix] = True
     mplot = hp.ma(map_values)
     mplot.mask = ~hp_mask
 
