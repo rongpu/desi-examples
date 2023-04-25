@@ -83,12 +83,14 @@ def plot_map(nside, v, pix=None, vmin=None, vmax=None, cmap='jet', title=None, s
     if save_path is not None:
         plt.savefig(save_path, bbox_inches="tight", dpi=dpi)
     if show:
-        if save_path is not None:
-            tmp = Image("tmp.png")
-            display(tmp)
-            plt.close()
-        else:
-            plt.show()
+        # if save_path is None:
+        #     plt.savefig("tmp.png", bbox_inches="tight", dpi=dpi)
+        #     tmp = Image("tmp.png")
+        #     display(tmp)
+        #     plt.close()
+        # else:
+        #     plt.show()
+        plt.show()
     else:
         plt.close()
 
