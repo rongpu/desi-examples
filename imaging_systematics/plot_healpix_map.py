@@ -35,7 +35,7 @@ default_xsize = {32: 1500, 64: 4000, 128: 4000, 256: 6000, 512: 16000}
 
 
 def plot_map(nside, v, pix=None, vmin=None, vmax=None, cmap='jet', title=None, save_path=None,
-             xsize=None, dpi=None, show=True, timing=True, nest=False, coord=None):
+             xsize=None, dpi=None, show=True, timing=True, nest=False, coord=None, cbar_label=''):
 
     if xsize is None:
         xsize = default_xsize[nside]
@@ -78,7 +78,7 @@ def plot_map(nside, v, pix=None, vmin=None, vmax=None, cmap='jet', title=None, s
              title=title,
              xlabel='RA (deg)', ylabel='Dec (deg)',
              custom_xtick_labels=[r'$240\degree$', r'$180\degree$', r'$120\degree$', r'$60\degree$', r'$0\degree$'],
-             fontsize=fontsize_dict)
+             fontsize=fontsize_dict, unit=cbar_label)
     newprojplot(theta=np.radians(90-decs), phi=np.radians(ras), color='k', lw=1)
     if save_path is not None:
         plt.savefig(save_path, bbox_inches="tight", dpi=dpi)
