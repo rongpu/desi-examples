@@ -77,6 +77,8 @@ def read_sweep_columns(sweep_fn, field, pz_dir=None):
             pz_fn = os.path.basename(sweep_fn).replace('.fits', '-pz.fits')
             pz_fn = os.path.join(pz_dir, field, pz_fn)
         pz = Table(fitsio.read(pz_fn, rows=idx, columns=pz_columns))
+    else:
+        pz = Table()
 
     cat = hstack([cat, cat_extra, pz], join_type='outer')
     cat['TARGETID'] = targetid

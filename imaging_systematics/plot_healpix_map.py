@@ -30,6 +30,9 @@ fontsize_dict = {
     "cbar_tick_label": 9.5,
 }
 
+# params = {'figure.facecolor': 'w'}
+# plt.rcParams.update(params)
+
 default_dpi = {32: 100, 64: 200, 128: 400, 256: 600, 512: 1600}
 default_xsize = {32: 1500, 64: 4000, 128: 4000, 256: 6000, 512: 16000}
 
