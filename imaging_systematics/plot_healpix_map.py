@@ -33,8 +33,8 @@ fontsize_dict = {
 # params = {'figure.facecolor': 'w'}
 # plt.rcParams.update(params)
 
-default_dpi = {32: 100, 64: 200, 128: 400, 256: 600, 512: 1600}
-default_xsize = {32: 1500, 64: 4000, 128: 4000, 256: 6000, 512: 16000}
+default_dpi = {32: 100, 64: 200, 128: 400, 256: 600, 512: 1200}
+default_xsize = {32: 1500, 64: 4000, 128: 4000, 256: 6000, 512: 12000}
 
 
 def plot_map(nside, v, pix=None, vmin=None, vmax=None, cmap='jet', title=None, save_path=None,
