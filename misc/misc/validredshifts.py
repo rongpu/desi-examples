@@ -148,7 +148,7 @@ def actually_validate(cat, fiberstatus_cut=True, ignore_emline=False, ignore_qso
         ignore_qso: bool (default False), if True, do not validate the QSO redshift
 
     Returns:
-        cat: astropy table with boolean columns (e.g., GOOD_BGS)
+        res: astropy table with boolean columns (e.g., GOOD_BGS)
     '''
 
     res = Table()
