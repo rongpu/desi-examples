@@ -87,6 +87,17 @@ def downsize_hp_map(nside_in, nside_out, hp_in, stats_dict=None, weights=None, n
     return hp_table
 
 
+# def simple_updownsizing(nside_in, nside_out, v, pix=None):
+#     '''
+#     Simple up/downsizing of unmasked map.
+#     Example:
+#     pix_new, v_new = simple_updownsizing(128, 64, full_sky['EBV'], full_sky['HPXPIXEL'])
+#     '''
+#     if pix is None:
+#         pix = np.arange(hp.nside2npix(nside_in))
+
+
+
 def get_stats_in_parallel(pix_idx):
     pix_list = pix_unique_[pix_idx]
     hp_table = Table()
