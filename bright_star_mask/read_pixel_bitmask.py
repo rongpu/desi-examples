@@ -40,7 +40,7 @@ version_dict = {'lrg': 'v1.1', 'elg': 'v1'}
 if version=='none':
     version = version_dict[tracer]
 
-bitmask_dir = '/global/cfs/cdirs/desi/survey/catalogs/brickmasks/{}/{}'.format(tracer.upper(), version)
+bitmask_dir = '/dvs_ro/cfs/cdirs/desi/survey/catalogs/brickmasks/{}/{}'.format(tracer.upper(), version)
 
 if os.path.isfile(output_path):
     raise ValueError(output_path+' already exists!')
@@ -60,7 +60,7 @@ def bitmask_radec(brickid, ra, dec):
         bitmask = np.full(len(ra), 2**7, dtype=np.uint8)
         return bitmask
 
-    # bitmask_fn = '/global/cfs/cdirs/cosmo/data/legacysurvey/dr9/{}/coadd/{}/{}/legacysurvey-{}-maskbits.fits.fz'.format(field, brickname[:3], brickname, brickname)
+    # bitmask_fn = '/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/{}/coadd/{}/{}/legacysurvey-{}-maskbits.fits.fz'.format(field, brickname[:3], brickname, brickname)
     bitmask_fn = os.path.join(bitmask_dir, '{}/coadd/{}/{}/{}-{}mask.fits.gz'.format(field, brickname[:3], brickname, brickname, tracer))
     # if not os.path.isfile(bitmask_fn):
     #     # Outside DR9 footprint; assign mask bit 7
@@ -96,8 +96,8 @@ def wrapper(bid_index):
     return data
 
 
-# bricks = Table(fitsio.read('/global/cfs/cdirs/cosmo/data/legacysurvey/dr9/survey-bricks.fits.gz'))
-bricks = Table(fitsio.read('/global/cfs/cdirs/cosmo/data/legacysurvey/dr9/randoms/survey-bricks-dr9-randoms-0.48.0.fits'))
+# bricks = Table(fitsio.read('/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/survey-bricks.fits.gz'))
+bricks = Table(fitsio.read('/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/randoms/survey-bricks-dr9-randoms-0.48.0.fits'))
 
 try:
     cat = Table(fitsio.read(input_path, rows=None, columns=['RA', 'DEC', 'BRICKID']))
