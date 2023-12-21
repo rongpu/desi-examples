@@ -3,7 +3,7 @@
 # from plot_healpix_map import plot_map
 # nside = 128
 # maps = Table(fitsio.read('/global/cfs/cdirs/desi/users/rongpu/data/imaging_sys/randoms_stats/0.49.0/resolve/combined/pixmap_south_nside_128_minobs_1_maskbits__lrgmask_v1.1.fits'))
-# plot_map(nside, maps['HPXPIXEL'], maps['PSFSIZE_G'], cmap='viridis', nest=False, vmin=1.0, vmax=2., save_path='psfsize_g.png')
+# plot_map(nside, maps['PSFSIZE_G'], pix=maps['HPXPIXEL'], cmap='viridis', nest=False, vmin=1.0, vmax=2., show=True)
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc
