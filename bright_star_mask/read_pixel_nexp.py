@@ -20,7 +20,7 @@ import argparse
 
 time_start = time.time()
 
-data_dir = '/global/cfs/cdirs/cosmo/data/legacysurvey/dr9'
+data_dir = '/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9'
 
 n_processes = 256
 
@@ -53,7 +53,8 @@ def bitmask_radec(brickid, ra, dec):
         n_g, n_r, n_z = np.full((3, len(ra)), 0, dtype=np.int16)
         return n_g, n_r, n_z
 
-    # bitmask_fn = '/global/cfs/cdirs/cosmo/data/legacysurvey/dr9/{}/coadd/{}/{}/legacysurvey-{}-maskbits.fits.fz'.format(field, brickname[:3], brickname, brickname)
+    # bitmask_fn = '/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/{}/coadd/{}/{}/legacysurvey-{}-maskbits.fits.fz'.format(field, brickname[:3], brickname, brickname)
+    # Example: /dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/south/coadd/196/1963p287
     nexp_g_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-g.fits.fz'.format(field, brickname[:3], brickname, brickname))
     nexp_r_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-r.fits.fz'.format(field, brickname[:3], brickname, brickname))
     nexp_z_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-z.fits.fz'.format(field, brickname[:3], brickname, brickname))
@@ -108,8 +109,8 @@ def wrapper(bid_index):
     return data
 
 
-# bricks = Table(fitsio.read('/global/cfs/cdirs/cosmo/data/legacysurvey/dr9/survey-bricks.fits.gz'))
-bricks = Table(fitsio.read('/global/cfs/cdirs/cosmo/data/legacysurvey/dr9/randoms/survey-bricks-dr9-randoms-0.48.0.fits'))
+# bricks = Table(fitsio.read('/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/survey-bricks.fits.gz'))
+bricks = Table(fitsio.read('/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/randoms/survey-bricks-dr9-randoms-0.48.0.fits'))
 
 try:
     cat = Table(fitsio.read(input_path, rows=None, columns=['RA', 'DEC', 'BRICKID']))
