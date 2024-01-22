@@ -51,8 +51,12 @@ def bitmask_radec(brickid, ra, dec):
         field = 'south'
     else:
         # Outside the survey footprint; assign NEXP=0
-        n_g, n_r, n_z = np.full((3, len(ra)), 0, dtype=np.int16)
-        return n_g, n_r, n_z
+        if float(args.dr)>=10:
+            n_g, n_r, n_i, n_z = np.full((4, len(ra)), 0, dtype=np.int16)
+            return n_g, n_r, n_i, n_z
+        else:
+            n_g, n_r, n_z = np.full((3, len(ra)), 0, dtype=np.int16)
+            return n_g, n_r, n_z
 
     # bitmask_fn = '/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr{}/{}/coadd/{}/{}/legacysurvey-{}-maskbits.fits.fz'.format(dr, field, brickname[:3], brickname, brickname)
     # Example: /dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/south/coadd/196/1963p287
@@ -133,7 +137,12 @@ def wrapper(bid_index):
 
 
 # bricks = Table(fitsio.read('/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/survey-bricks.fits.gz'))
-bricks = Table(fitsio.read('/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/randoms/survey-bricks-dr9-randoms-0.48.0.fits'))
+if args.dr=='10':
+    bricks = Table(fitsio.read('/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr10/randoms/survey-bricks-dr10-randoms-2.6.0.fits'))
+elif args.dr=='9':
+    bricks = Table(fitsio.read('/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/randoms/survey-bricks-dr9-randoms-0.48.0.fits'))
+else:
+    raise ValueError('survey-bricks path for DR{} not specified')
 
 try:
     cat = Table(fitsio.read(input_path, rows=None, columns=['RA', 'DEC', 'BRICKID']))
