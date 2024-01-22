@@ -20,14 +20,15 @@ import argparse
 
 time_start = time.time()
 
-data_dir = '/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9'
-
 n_processes = 256
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input', required=True)
 parser.add_argument('-o', '--output', required=True)
+parser.add_argument('--dr', default='9')
 args = parser.parse_args()
+
+data_dir = '/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr'+args.dr
 
 input_path = args.input
 output_path = args.output
@@ -49,11 +50,11 @@ def bitmask_radec(brickid, ra, dec):
     elif bricks['PHOTSYS'][brick_index]=='S':
         field = 'south'
     else:
-        # Outside DR9 footprint; assign NEXP=0
+        # Outside the survey footprint; assign NEXP=0
         n_g, n_r, n_z = np.full((3, len(ra)), 0, dtype=np.int16)
         return n_g, n_r, n_z
 
-    # bitmask_fn = '/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/{}/coadd/{}/{}/legacysurvey-{}-maskbits.fits.fz'.format(field, brickname[:3], brickname, brickname)
+    # bitmask_fn = '/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr{}/{}/coadd/{}/{}/legacysurvey-{}-maskbits.fits.fz'.format(dr, field, brickname[:3], brickname, brickname)
     # Example: /dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/south/coadd/196/1963p287
     nexp_g_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-g.fits.fz'.format(field, brickname[:3], brickname, brickname))
     nexp_r_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-r.fits.fz'.format(field, brickname[:3], brickname, brickname))
