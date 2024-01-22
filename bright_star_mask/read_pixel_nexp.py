@@ -59,22 +59,33 @@ def bitmask_radec(brickid, ra, dec):
     nexp_g_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-g.fits.fz'.format(field, brickname[:3], brickname, brickname))
     nexp_r_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-r.fits.fz'.format(field, brickname[:3], brickname, brickname))
     nexp_z_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-z.fits.fz'.format(field, brickname[:3], brickname, brickname))
+    if float(args.dr)>=10:
+        nexp_i_fn = os.path.join(data_dir, '{}/coadd/{}/{}/legacysurvey-{}-nexp-i.fits.fz'.format(field, brickname[:3], brickname, brickname))
 
     if os.path.isfile(nexp_g_fn):
         nexp_g = fitsio.read(nexp_g_fn)
         nexp_good_fn = nexp_g_fn
     else:
         n_g = np.full(len(ra), 0, dtype=np.int16)
+
     if os.path.isfile(nexp_r_fn):
         nexp_r = fitsio.read(nexp_r_fn)
         nexp_good_fn = nexp_r_fn
     else:
         n_r = np.full(len(ra), 0, dtype=np.int16)
+
     if os.path.isfile(nexp_z_fn):
         nexp_z = fitsio.read(nexp_z_fn)
         nexp_good_fn = nexp_z_fn
     else:
         n_z = np.full(len(ra), 0, dtype=np.int16)
+
+    if float(args.dr)>=10:
+        if os.path.isfile(nexp_i_fn):
+            nexp_i = fitsio.read(nexp_i_fn)
+            nexp_good_fn = nexp_i_fn
+        else:
+            n_i = np.full(len(ra), 0, dtype=np.int16)
 
     header = fits.open(nexp_good_fn)[1].header
     w = wcs.WCS(header)
@@ -88,8 +99,14 @@ def bitmask_radec(brickid, ra, dec):
         n_r = nexp_r[coadd_y, coadd_x]
     if 'n_z' not in locals():
         n_z = nexp_z[coadd_y, coadd_x]
+    if float(args.dr)>=10:
+        if 'n_i' not in locals():
+            n_i = nexp_i[coadd_y, coadd_x]
 
-    return n_g, n_r, n_z
+    if float(args.dr)>=10:
+        return n_g, n_r, n_i, n_z
+    else:
+        return n_g, n_r, n_z
 
 
 def wrapper(bid_index):
@@ -99,12 +116,17 @@ def wrapper(bid_index):
 
     ra, dec = cat['RA'][idx], cat['DEC'][idx]
 
-    n_g, n_r, n_z = bitmask_radec(brickid, ra, dec)
+    if float(args.dr)>=10:
+        n_g, n_r, n_i, n_z = bitmask_radec(brickid, ra, dec)
+    else:
+        n_g, n_r, n_z = bitmask_radec(brickid, ra, dec)
 
     data = Table()
     data['idx'] = idx
     data['PIXEL_NOBS_G'] = n_g
     data['PIXEL_NOBS_R'] = n_r
+    if float(args.dr)>=10:
+        data['PIXEL_NOBS_I'] = n_i
     data['PIXEL_NOBS_Z'] = n_z
 
     return data
