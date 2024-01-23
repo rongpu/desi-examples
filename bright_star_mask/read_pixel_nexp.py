@@ -142,7 +142,7 @@ if args.dr=='10':
 elif args.dr=='9':
     bricks = Table(fitsio.read('/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/randoms/survey-bricks-dr9-randoms-0.48.0.fits'))
 else:
-    raise ValueError('survey-bricks path for DR{} not specified')
+    raise ValueError('survey-bricks path for DR{} not specified'.format(args.dr))
 
 try:
     cat = Table(fitsio.read(input_path, rows=None, columns=['RA', 'DEC', 'BRICKID']))
