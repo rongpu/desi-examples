@@ -103,7 +103,7 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
 
 def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cameras=False,
     show_lines=True, show_restframe=True, z=None, show_model=True, ith_bestfit=1, gauss_smooth=3, figsize=(22, 5),
-    lw=1.2, label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim=None, grid=False,
+    lw=1.2, label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim='auto', grid=False,
     save_path=None, mags=None):
     '''
     Plot DESI spectrum.
@@ -288,20 +288,27 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
                 # model_flux_smooth = gaussian_filter1d(model_flux[camera], gauss_smooth, mode='constant', cval=0)
                 model_flux_smooth = convolve(model_flux[camera], gauss_kernel, boundary='extend')
             ax1.plot(wave, model_flux_smooth, lw=3, color='r', alpha=0.4, label=label_model)
-        ymin = np.minimum(ymin, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 1.))
-        ymax = np.maximum(ymax, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 99.))
+        if ylim=='auto':
+            ymin = np.minimum(ymin, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 1.))
+            ymax = np.maximum(ymax, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 99.))
+        elif ylim=='minmax':
+            ymin = np.min(flux_smooth[np.isfinite(flux_smooth)])
+            ymax = np.max(flux_smooth[np.isfinite(flux_smooth)])
 
-    if ylim is None:
+    if ylim=='auto':
         ylim = [ymin, ymax]
+    elif ylim=='minmax':
+        ylim = [ymin-0.05*(ymax-ymin), ymax+0.05*(ymax-ymin)]
+
     if show_lines:
         for line_index in range(len(lines)):
             line_name, line_wavelength, text_offset = lines[line_index]
-            if (line_wavelength*(1+z)>3400) & (line_wavelength*(1+z)<10000):
+            if (line_wavelength*(1+z)>xlim[0]) & (line_wavelength*(1+z)<xlim[1]):
                 ax1.axvline(line_wavelength*(1+z), lw=lw, color='C2', alpha=1, ls='--')
                 text_yposition = 0.96*ylim[0]+0.04*ylim[1]
                 text_yposition += 0.05*(ylim[1]-ylim[0])*text_offset
                 ax1.text(line_wavelength*(1+z)+7, text_yposition, line_name, fontsize=plt.rcParams['legend.fontsize'])
-    ax1.text(3450, 0.04*ylim[0]+0.96*ylim[1], plot_label, verticalalignment='top',
+    ax1.text(xlim[0]+0.008*(xlim[1]-xlim[0]), 0.04*ylim[0]+0.96*ylim[1], plot_label, verticalalignment='top',
              fontsize=plt.rcParams['legend.fontsize'], bbox=dict(facecolor='white', alpha=0.7))
     ax1.axis([xlim[0], xlim[1], ylim[0], ylim[1]])
     ax1.set_xlabel('observed wavelength ($\AA$)')
@@ -312,15 +319,15 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
         ax1.grid()
     if title is not None:
         ax1.set_title(title)
+    ax1.xaxis.set_minor_locator(AutoMinorLocator())
+    ax1.tick_params(axis="both", which='both', direction="in", top=False, right=True)
+    ax1.set_ylabel('flux ($10^{-17}$ ergs/s/cm$^2$/$\AA$)')
     if show_restframe:
         ax2 = ax1.twiny()
         ax2.set_xlim(3400/(1+z), 10000/(1+z))
         ax2.set_xlabel('restframe wavelength ($\AA$)')
-        ax1.set_ylabel('flux ($10^{-17}$ ergs/s/cm$^2$/$\AA$)')
-    ax1.xaxis.set_minor_locator(AutoMinorLocator())
-    ax1.tick_params(axis="both", which='both', direction="in", top=False, right=True)
-    ax2.xaxis.set_minor_locator(AutoMinorLocator())
-    ax2.tick_params(which='both', direction="in")
+        ax2.xaxis.set_minor_locator(AutoMinorLocator())
+        ax2.tick_params(which='both', direction="in")
     plt.tight_layout()
     if save_path is not None:
         plt.savefig(save_path)
