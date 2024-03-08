@@ -26,7 +26,7 @@ def get_stellar_flux(cat):
 
     cat['original_id'] = np.arange(len(cat))
 
-    gaia_dir = '/project/projectdirs/cosmo/data/gaia/edr3/healpix'
+    gaia_dir = '/dvs_ro/cfs/cdirs/cosmo/data/gaia/edr3/healpix'
 
     nside = 32
     hp_pix = hp.ang2pix(nside, cat['ra'], cat['dec'], nest=True, lonlat=True)
