@@ -257,7 +257,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             gauss_kernel = Gaussian1DKernel(stddev=gauss_smooth)
             flux_smooth = convolve(flux, gauss_kernel, boundary='extend')
             ivar_smooth = convolve(ivar, gauss_kernel, boundary='extend')
-            nea = np.sum(gauss_kernel.array)**2/np.sum(gauss_kernel.array**2)
+            nea = np.sum(gauss_kernel.array)**2/np.sum(gauss_kernel.array**2)  # noise equivalent area
             ivar_smooth *= nea
 
         if label is not None:
