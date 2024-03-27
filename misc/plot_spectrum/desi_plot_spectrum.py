@@ -257,6 +257,8 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             gauss_kernel = Gaussian1DKernel(stddev=gauss_smooth)
             flux_smooth = convolve(flux, gauss_kernel, boundary='extend')
             ivar_smooth = convolve(ivar, gauss_kernel, boundary='extend')
+            nea = np.sum(gauss_kernel.array)**2/np.sum(gauss_kernel.array**2)
+            ivar_smooth *= nea
 
         if label is not None:
             plot_label = label
@@ -321,6 +323,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
              fontsize=plt.rcParams['legend.fontsize'], bbox=dict(facecolor='white', alpha=0.7))
     ax1.axis([xlim[0], xlim[1], ylim[0], ylim[1]])
     ax1.set_xlabel('observed wavelength ($\AA$)')
+    ax1.axhline(0, lw=0.3, ls='--', color='k', alpha=0.5)
     # plt.axvline(4000, ls='--', lw=1, color='k')
     # ax1.legend(loc='upper left', handletextpad=.0, handlelength=0)
     ax1.legend(loc=(0.885, 0.16))
