@@ -284,7 +284,9 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             color = None
         ax1.plot(wave, flux_smooth, lw=lw, label=label_data, color=color)
         if show_error:
-            ax1.fill_between(wave, -1/np.sqrt(ivar_smooth), 1/np.sqrt(ivar_smooth), lw=lw, color='0.7', alpha=0.3)
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                ax1.fill_between(wave, -1/np.sqrt(ivar_smooth), 1/np.sqrt(ivar_smooth), lw=lw, color='0.7', alpha=0.3)
         if show_model:
             if gauss_smooth==0 or gauss_smooth is None:
                 model_flux_smooth = model_flux[camera].copy()
@@ -309,6 +311,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     if show_lines:
         for line_index in range(len(lines)):
             line_name, line_wavelength, text_offset = lines[line_index]
+            line_wavelength *= 1.0003  # air-to-vacuum offset?
             if (line_wavelength*(1+z)>xlim[0]) & (line_wavelength*(1+z)<xlim[1]):
                 ax1.axvline(line_wavelength*(1+z), lw=lw, color='C2', alpha=1, ls='--')
                 text_yposition = 0.96*ylim[0]+0.04*ylim[1]
