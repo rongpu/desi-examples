@@ -104,7 +104,7 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
 def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_cameras=False,
     show_lines=True, show_restframe=True, z=None, show_model=True, ith_bestfit=1, gauss_smooth=3, figsize=(22, 5),
     lw=1.2, label=None, title=None, show=True, return_ax=False, xlim=[3400, 10000], ylim='auto', grid=False,
-    save_path=None, mags=None):
+    save_path=None, mags=None, show_error=True):
     '''
     Plot DESI spectrum.
 
@@ -251,10 +251,12 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
 
         if gauss_smooth==0 or gauss_smooth is None:
             flux_smooth = flux.copy()
+            ivar_smooth = ivar.copy()
         elif gauss_smooth>0:
             # flux_smooth = gaussian_filter1d(flux, gauss_smooth, mode='constant', cval=0)
             gauss_kernel = Gaussian1DKernel(stddev=gauss_smooth)
             flux_smooth = convolve(flux, gauss_kernel, boundary='extend')
+            ivar_smooth = convolve(ivar, gauss_kernel, boundary='extend')
 
         if label is not None:
             plot_label = label
@@ -281,6 +283,8 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
         else:
             color = None
         ax1.plot(wave, flux_smooth, lw=lw, label=label_data, color=color)
+        if show_error:
+            ax1.fill_between(wave, -1/np.sqrt(ivar_smooth), 1/np.sqrt(ivar_smooth), lw=lw, color='0.7', alpha=0.3)
         if show_model:
             if gauss_smooth==0 or gauss_smooth is None:
                 model_flux_smooth = model_flux[camera].copy()
@@ -292,8 +296,10 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             ymin = np.minimum(ymin, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 1.))
             ymax = np.maximum(ymax, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 99.))
         elif ylim=='minmax':
-            ymin = np.min(flux_smooth[np.isfinite(flux_smooth)])
-            ymax = np.max(flux_smooth[np.isfinite(flux_smooth)])
+            mask = (wave>xlim[0]) & (wave<xlim[1])
+            if np.sum(mask)>0:
+                ymin = np.minimum(ymin, np.min(flux_smooth[mask & np.isfinite(flux_smooth)]))
+                ymax = np.maximum(ymax, np.max(flux_smooth[mask & np.isfinite(flux_smooth)]))
 
     if ylim=='auto':
         ylim = [ymin, ymax]
