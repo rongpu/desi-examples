@@ -19,17 +19,6 @@ from healpy.newvisufunc import projview, newprojplot
 
 from IPython.display import Image, display
 
-# Font sizes for healpix maps
-fontsize_dict = {
-    "xlabel": 9.5,
-    "ylabel": 9.5,
-    "title": 9.5,
-    "xtick_label": 9.5,
-    "ytick_label": 9.5,
-    "cbar_label": 9.5,
-    "cbar_tick_label": 9.5,
-}
-
 # params = {'figure.facecolor': 'w'}
 # plt.rcParams.update(params)
 
@@ -38,13 +27,25 @@ default_xsize = {32: 1500, 64: 4000, 128: 4000, 256: 6000, 512: 12000}
 
 
 def plot_map(nside, v, pix=None, vmin=None, vmax=None, cmap='jet', title=None, save_path=None,
-             xsize=None, dpi=None, show=True, timing=True, nest=False, coord=None, cbar_label=''):
+             xsize=None, dpi=None, show=True, timing=True, nest=False, coord=None, cbar_label='',
+             fontsize=9.5):
 
     if xsize is None:
         xsize = default_xsize[nside]
 
     if dpi is None:
         dpi = default_dpi[nside]
+
+    # Font sizes for healpix maps
+    fontsize_dict = {
+        "xlabel": fontsize,
+        "ylabel": fontsize,
+        "title": fontsize,
+        "xtick_label": fontsize,
+        "ytick_label": fontsize,
+        "cbar_label": fontsize,
+        "cbar_tick_label": fontsize,
+    }
 
     npix = hp.nside2npix(nside)
 
