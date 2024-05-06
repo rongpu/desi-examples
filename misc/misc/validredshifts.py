@@ -107,6 +107,8 @@ def validate(redrock_path, fiberstatus_cut=True, return_target_columns=False, ex
 
     res = actually_validate(cat, fiberstatus_cut=fiberstatus_cut, ignore_emline=ignore_emline)
 
+    cat = hstack([cat, res])
+
     if return_target_columns:
         from desitarget.targetmask import desi_mask, bgs_mask
         res1 = Table()
@@ -125,8 +127,8 @@ def validate(redrock_path, fiberstatus_cut=True, return_target_columns=False, ex
         # res1['BGS_ANY'] = cat['DESI_TARGET'] & 2**60 > 0
         # res1['BGS_FAINT'] = cat['BGS_TARGET'] & 2**0 > 0
         # res1['BGS_BRIGHT'] = cat['BGS_TARGET'] & 2**1 > 0
+        cat = hstack([cat, res1])
 
-    cat = hstack([cat, res1, res])
     cat = cat[output_columns]
 
     return cat
