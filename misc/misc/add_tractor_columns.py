@@ -13,7 +13,7 @@ from desitarget.targets import decode_targetid, encode_targetid
 
 n_processes = 128
 
-cat_basic_path = '/global/cfs/cdirs/desicollab/users/rongpu/targets/dr9.0/zp_offset_corrected/dr9_bgs_basic.fits'
+cat_basic_path = '/dvs_ro/cfs/cdirs/desicollab/users/rongpu/targets/dr9.0/zp_offset_corrected/dr9_bgs_basic.fits'
 output_path = '/pscratch/sd/r/rongpu/tmp/dr9_bgs_apflux_r.fits'
 
 # Add these columns from tractor catalogs
@@ -28,7 +28,7 @@ cat_basic['PHOTSYS'][mask] = 'S'
 cat_basic['PHOTSYS'][~mask] = 'N'
 assert np.sum(cat_basic['PHOTSYS']==' ')==0
 
-bricks = Table.read('/global/cfs/cdirs/cosmo/data/legacysurvey/dr9/survey-bricks.fits.gz')
+bricks = Table.read('/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/survey-bricks.fits.gz')
 
 
 print('Start!')
@@ -65,7 +65,7 @@ for field in ['north', 'south']:
 
         return cat
 
-    tractor_dir = '/global/cfs/cdirs/cosmo/data/legacysurvey/dr9/{}/tractor'.format(field)
+    tractor_dir = '/dvs_ro/cfs/cdirs/cosmo/data/legacysurvey/dr9/{}/tractor'.format(field)
 
     # start multiple worker processes
     with Pool(processes=n_processes) as pool:
