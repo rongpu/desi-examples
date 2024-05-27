@@ -80,7 +80,7 @@ def plot_map(nside, v, pix=None, vmin=None, vmax=None, cmap='jet', title=None, s
              rot=(120, 0, 0), coord=coord, cmap=cmap, xsize=xsize,
              graticule=True, graticule_labels=True, projection_type="mollweide", nest=nest,
              title=title,
-             xlabel='RA (deg)', ylabel='Dec (deg)',
+             xlabel='RA', ylabel='Dec.',
              custom_xtick_labels=[r'$240\degree$', r'$180\degree$', r'$120\degree$', r'$60\degree$', r'$0\degree$'],
              fontsize=fontsize_dict, unit=cbar_label)
     newprojplot(theta=np.radians(90-decs), phi=np.radians(ras), color='k', lw=1)

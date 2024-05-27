@@ -269,7 +269,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
                 plot_label += '\nRedshift={:.4f}'.format(z)
             else:
                 type_text = 'TYPE={}'.format(spectype)
-                if spectype=='STAR':
+                if spectype=='STAR' or spectype=='QSO':
                     type_text += '  SUBTYPE={}'.format(subtype)
                 plot_label += '\nRedshift={:.4f}  {}  ZWARN={}  DELTACHI2={:.1f}'.format(
                     z, type_text, zwarn, deltachi2)
