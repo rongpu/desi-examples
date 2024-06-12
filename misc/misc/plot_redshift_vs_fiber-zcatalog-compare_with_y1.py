@@ -1,10 +1,10 @@
 # Use zcatalog instead of the LSS catalog
 # Make 2-D density plots of redshift vs fiber
 # Example:
-# python plot_redshift_vs_fiber-zcatalog.py --tracer BGS_ANY -v jura --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_jura_zcatalog
-# python plot_redshift_vs_fiber-zcatalog.py --tracer LRG -v jura --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_jura_zcatalog
-# python plot_redshift_vs_fiber-zcatalog.py --tracer ELG -v jura --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_jura_zcatalog
-# python plot_redshift_vs_fiber-zcatalog.py --tracer QSO -v jura --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_jura_zcatalog
+# python plot_redshift_vs_fiber-zcatalog-compare_with_y1.py --tracer BGS_ANY -v jura --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_jura_zcatalog_y1_subset
+# python plot_redshift_vs_fiber-zcatalog-compare_with_y1.py --tracer LRG -v jura --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_jura_zcatalog_y1_subset
+# python plot_redshift_vs_fiber-zcatalog-compare_with_y1.py --tracer ELG -v jura --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_jura_zcatalog_y1_subset
+# python plot_redshift_vs_fiber-zcatalog-compare_with_y1.py --tracer QSO -v jura --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_jura_zcatalog_y1_subset
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc, argparse
@@ -45,8 +45,71 @@ if fn is None:
     fn_dict = {'BGS_ANY': 'ztile-main-bright-cumulative.fits', 'LRG': 'ztile-main-dark-cumulative.fits', 'ELG': 'ztile-main-dark-cumulative.fits', 'QSO': 'ztile-main-dark-cumulative.fits'}
     # fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/iron/zcatalog', fn_dict[tracer])
     fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1'.format(version), fn_dict[tracer])
+fn_y1 = fn.replace('jura', 'iron').replace('v1', 'v0')
+print(fn_y1)
 
 min_nobs = 100
+
+########################################################################################################################
+
+cat = Table(fitsio.read(fn_y1, columns=['DESI_TARGET']))
+idx = np.where(cat['DESI_TARGET'] & 2**target_bit > 0)[0]
+cat = Table(fitsio.read(fn_y1, rows=idx))
+print(len(cat))
+
+if 'Z_not4clus' in cat.colnames:
+    cat.rename_column('Z_not4clus', 'Z')
+
+cat['EFFTIME_BGS'] = 0.1400 * cat['TSNR2_BGS']
+cat['EFFTIME_LRG'] = 12.15 * cat['TSNR2_LRG']
+
+# Remove FIBERSTATUS!=0 fibers
+mask = cat['COADD_FIBERSTATUS']==0
+print('FIBERSTATUS   ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+cat = cat[mask]
+
+# Remove "no data" fibers
+mask = cat['ZWARN'] & 2**9==0
+print('No data   ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+cat = cat[mask]
+
+# Require a minimum depth for the cat coadd
+if tracer=='BGS_ANY':
+    min_depth = 160
+    mask = cat['EFFTIME_BGS']>min_depth
+else:
+    min_depth = 800.
+    mask = cat['EFFTIME_LRG']>min_depth
+print('Min depth   ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+cat = cat[mask]
+
+if tracer=='LRG':
+    # Apply maskbits
+    maskbits = [1, 8, 9, 11, 12, 13]
+    mask = np.ones(len(cat), dtype=bool)
+    for bit in maskbits:
+        mask &= (cat['MASKBITS'] & 2**bit)==0
+    print('MASKBITS  ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+    cat = cat[mask]
+elif tracer=='ELG':
+    # Apply maskbits
+    maskbits = [1, 11, 12, 13]
+    mask = np.ones(len(cat), dtype=bool)
+    for bit in maskbits:
+        mask &= (cat['MASKBITS'] & 2**bit)==0
+    print('MASKBITS  ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+    cat = cat[mask]
+
+# # Remove duplicated objects
+# print(len(cat), len(np.unique(cat['TARGETID'])))
+# cat.sort('EFFTIME_LRG', reverse=True)
+# _, idx_keep = np.unique(cat['TARGETID'], return_index=True)
+# cat = cat[idx_keep]
+# print(len(cat), len(np.unique(cat['TARGETID'])))
+
+cat_y1 = cat.copy()
+
+########################################################################################################################
 
 cat = Table(fitsio.read(fn, columns=['DESI_TARGET']))
 idx = np.where(cat['DESI_TARGET'] & 2**target_bit > 0)[0]
@@ -102,6 +165,13 @@ elif tracer=='ELG':
 # _, idx_keep = np.unique(cat['TARGETID'], return_index=True)
 # cat = cat[idx_keep]
 # print(len(cat), len(np.unique(cat['TARGETID'])))
+
+########################################################################################################################
+mask = np.in1d(cat['TARGETID'], cat_y1['TARGETID'])
+mask &= np.in1d(cat['TILEID'], cat_y1['TILEID'])
+cat = cat[mask]
+print(np.sum(mask)/len(mask), len(cat), len(cat_y1))
+########################################################################################################################
 
 fiberstats = Table()
 fiberstats['FIBER'], fiberstats['n_tot'] = np.unique(cat['FIBER'], return_counts=True)

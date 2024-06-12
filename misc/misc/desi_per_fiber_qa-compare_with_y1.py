@@ -1,9 +1,9 @@
 # Plot QA plots per-fiber redshift performance
 # Examples:
-# python desi_per_fiber_qa.py -t BGS_ANY -v jura -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/jura
-# python desi_per_fiber_qa.py -t LRG -v jura -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/jura
-# # python desi_per_fiber_qa.py -t ELG -v jura -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/jura
-# # python desi_per_fiber_qa.py -t QSO -v jura -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/jura
+# python desi_per_fiber_qa-compare_with_y1.py -t BGS_ANY -v jura -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/jura_y1_subset
+# python desi_per_fiber_qa-compare_with_y1.py -t LRG -v jura -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/jura_y1_subset
+# # python desi_per_fiber_qa-compare_with_y1.py -t ELG -v jura -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/jura_y1_subset
+# # python desi_per_fiber_qa-compare_with_y1.py -t QSO -v jura -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/jura_y1_subset
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc
@@ -41,11 +41,75 @@ target_bit = target_bits[tracer]
 fn_dict = {'BGS_ANY': 'ztile-main-bright-cumulative.fits', 'LRG': 'ztile-main-dark-cumulative.fits', 'ELG': 'ztile-main-dark-cumulative.fits', 'QSO': 'ztile-main-dark-cumulative.fits'}
 # fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/{}/zcatalog'.format(version), fn_dict[tracer])
 fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1'.format(version), fn_dict[tracer])
+fn_y1 = fn.replace('jura', 'iron').replace('v1', 'v0')
+print(fn_y1)
 
 frac_fail_threshold = args.fail_threshold
 if frac_fail_threshold is None:
     fail_threshold_dict = {'BGS_ANY': 0.05, 'LRG': 0.05}
     frac_fail_threshold = fail_threshold_dict[tracer]
+
+########################################################################################################################
+
+cat = Table(fitsio.read(fn_y1, columns=['DESI_TARGET']))
+idx = np.where(cat['DESI_TARGET'] & 2**target_bit > 0)[0]
+cat = Table(fitsio.read(fn_y1, rows=idx))
+print(len(cat))
+
+if 'Z_not4clus' in cat.colnames:
+    cat.rename_column('Z_not4clus', 'Z')
+
+cat['EFFTIME_BGS'] = 0.1400 * cat['TSNR2_BGS']
+cat['EFFTIME_LRG'] = 12.15 * cat['TSNR2_LRG']
+
+# Remove FIBERSTATUS!=0 fibers
+mask = cat['COADD_FIBERSTATUS']==0
+print('FIBERSTATUS   ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+cat = cat[mask]
+
+# Remove "no data" fibers
+mask = cat['ZWARN'] & 2**9==0
+print('No data   ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+cat = cat[mask]
+
+# Require a minimum depth for the cat coadd
+if tracer=='BGS_ANY':
+    min_depth = 160
+    mask = cat['EFFTIME_BGS']>min_depth
+else:
+    min_depth = 800.
+    mask = cat['EFFTIME_LRG']>min_depth
+print('Min depth   ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+cat = cat[mask]
+
+# Apply masks
+if tracer=='LRG':
+    tmp1 = Table(fitsio.read(os.path.join('/global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_lrg_1.1.1_basic.fits'), columns=['TARGETID']))
+    tmp2 = Table(fitsio.read(os.path.join('/global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_lrg_1.1.1_lrgmask_v1.1.fits.gz')))
+    lrgmask = hstack([tmp1, tmp2])
+    lrgmask = lrgmask[lrgmask['lrg_mask']==0]
+    mask = np.in1d(cat['TARGETID'], lrgmask['TARGETID'])
+    print('Mask', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+    cat = cat[mask]
+elif tracer=='ELG':
+    tmp1 = Table(fitsio.read(os.path.join('/global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_elg_1.1.1_basic.fits'), columns=['TARGETID']))
+    tmp2 = Table(fitsio.read(os.path.join('/global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_elg_1.1.1_elgmask_v1.fits.gz')))
+    elgmask = hstack([tmp1, tmp2])
+    elgmask = elgmask[elgmask['elg_mask']==0]
+    mask = np.in1d(cat['TARGETID'], lrgmask['TARGETID'])
+    print('Mask', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+    cat = cat[mask]
+
+# # Remove duplicated objects
+# print(len(cat), len(np.unique(cat['TARGETID'])))
+# cat.sort('EFFTIME_LRG', reverse=True)
+# _, idx_keep = np.unique(cat['TARGETID'], return_index=True)
+# cat = cat[idx_keep]
+# print(len(cat), len(np.unique(cat['TARGETID'])))
+
+cat_y1 = cat.copy()
+
+########################################################################################################################
 
 cat = Table(fitsio.read(fn, columns=['DESI_TARGET']))
 idx = np.where(cat['DESI_TARGET'] & 2**target_bit > 0)[0]
@@ -103,6 +167,13 @@ elif tracer=='ELG':
 # cat = cat[idx_keep]
 # print(len(cat), len(np.unique(cat['TARGETID'])))
 
+########################################################################################################################
+mask = np.in1d(cat['TARGETID'], cat_y1['TARGETID'])
+mask &= np.in1d(cat['TILEID'], cat_y1['TILEID'])
+cat = cat[mask]
+print(np.sum(mask)/len(mask), len(cat), len(cat_y1))
+########################################################################################################################
+
 # Redshift quality cut
 if tracer=='LRG':
     cat['q'] = cat['ZWARN']==0
@@ -150,9 +221,6 @@ if error_floor:
 else:
     p1 = p
 fiberstats['frac_fail_err'] = np.clip(np.sqrt(n * p * (1-p))/n, np.sqrt(n * p1 * (1-p1))/n, 1)
-
-fiberstats.write(os.path.join(output_dir, tracer.lower()+'_fiber_stats.fits'))
-
 fiberstats.sort('n_fail')
 
 print('Bad fibers')
