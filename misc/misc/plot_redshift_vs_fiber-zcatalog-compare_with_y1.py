@@ -177,7 +177,7 @@ fiberstats = Table()
 fiberstats['FIBER'], fiberstats['n_tot'] = np.unique(cat['FIBER'], return_counts=True)
 fiberstats['weight'] = 1/fiberstats['n_tot']*np.median(fiberstats['n_tot'])
 cat = join(cat, fiberstats[['FIBER', 'weight']], join_type='outer')
-too_few_fibers = fiberstats['FIBER'][fiberstats['n_tot']<=min_nobs]
+too_few_fibers = fiberstats['FIBER'][fiberstats['n_tot']<min_nobs]
 
 fig, ax = plt.subplots(10, 1, figsize=(16, 20))
 for index in range(10):

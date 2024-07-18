@@ -19,14 +19,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-t', '--tracer', required=True)
 parser.add_argument('-v', '--version', default='iron', required=False)
 parser.add_argument('-o', '--output', default='', required=False)
-parser.add_argument('--min_fibers', default=50, type=int, required=False)
+parser.add_argument('--min_nobs', default=50, type=int, required=False)
 parser.add_argument('--fail_threshold', default=None, type=float, required=False)
 args = parser.parse_args()
 
 tracer = args.tracer.upper()
 output_dir = args.output
 version = args.version
-min_fibers = args.min_fibers
+min_nobs = args.min_nobs
+
+stats_output_path = os.path.join(output_dir, tracer.lower()+'_fiber_stats.fits')
 
 if not os.path.isdir(output_dir):
     try:
@@ -39,7 +41,6 @@ target_bits = {'LRG': 0, 'ELG': 1, 'QSO': 2, 'BGS_ANY': 60}
 target_bit = target_bits[tracer]
 
 fn_dict = {'BGS_ANY': 'ztile-main-bright-cumulative.fits', 'LRG': 'ztile-main-dark-cumulative.fits', 'ELG': 'ztile-main-dark-cumulative.fits', 'QSO': 'ztile-main-dark-cumulative.fits'}
-# fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/{}/zcatalog'.format(version), fn_dict[tracer])
 fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1'.format(version), fn_dict[tracer])
 
 frac_fail_threshold = args.fail_threshold
@@ -47,9 +48,21 @@ if frac_fail_threshold is None:
     fail_threshold_dict = {'BGS_ANY': 0.05, 'LRG': 0.05}
     frac_fail_threshold = fail_threshold_dict[tracer]
 
-cat = Table(fitsio.read(fn, columns=['DESI_TARGET']))
-idx = np.where(cat['DESI_TARGET'] & 2**target_bit > 0)[0]
-cat = Table(fitsio.read(fn, rows=idx))
+columns = ['COADD_FIBERSTATUS', 'COADD_NUMEXP', 'COADD_NUMNIGHT', 'DELTACHI2', 'DESI_TARGET', 'FIBER', 'FIBERASSIGN_X', 'FIBERASSIGN_Y', 'FIRSTNIGHT', 'LASTNIGHT', 'MASKBITS', 'MAX_MJD', 'MEAN_MJD', 'MIN_MJD', 'SPECTYPE', 'SUBTYPE', 'TARGET_DEC', 'TARGET_RA', 'TARGETID', 'TILEID', 'TSNR2_BGS', 'TSNR2_LRG', 'Z', 'ZWARN']
+
+cat_fn = '/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/{}_data/{}.fits'.format(version, tracer.lower())
+if not os.path.isfile(cat_fn):
+    if not os.path.isdir(os.path.dirname(cat_fn)):
+        try:
+            os.makedirs(os.path.dirname(cat_fn))
+        except:
+            pass
+    cat = Table(fitsio.read(fn, columns=['DESI_TARGET']))
+    idx = np.where(cat['DESI_TARGET'] & 2**target_bit > 0)[0]
+    cat = Table(fitsio.read(fn, rows=idx, columns=columns))
+    cat.write(cat_fn)
+else:
+    cat = Table(fitsio.read(cat_fn))
 print(len(cat))
 
 if 'Z_not4clus' in cat.colnames:
@@ -151,7 +164,7 @@ else:
     p1 = p
 fiberstats['frac_fail_err'] = np.clip(np.sqrt(n * p * (1-p))/n, np.sqrt(n * p1 * (1-p1))/n, 1)
 
-fiberstats.write(os.path.join(output_dir, tracer.lower()+'_fiber_stats.fits'))
+fiberstats.write(stats_output_path)
 
 fiberstats.sort('n_fail')
 
@@ -165,39 +178,40 @@ print(len(bad_fibers))
 print(list(bad_fibers))
 
 # Failure rate vs fiber plot
+ymax = 0.3
 fig, ax = plt.subplots(10, 1, figsize=(16, 20))
 for index in range(10):
     fiber_min, fiber_max = index*500-0.5, (index+1)*500-0.5
     mask = (fiberstats['FIBER']>fiber_min) & (fiberstats['FIBER']<fiber_max)
-    mask &= (fiberstats['n_tot']>min_fibers)
+    mask &= (fiberstats['n_tot']>=min_nobs)
     mask_good = mask & (~np.in1d(fiberstats['FIBER'], bad_fibers))
     mask_bad = mask & np.in1d(fiberstats['FIBER'], bad_fibers)
-    mask_really_bad = mask & (fiberstats['frac_fail']>0.3)
+    mask_really_bad = mask & (fiberstats['frac_fail']>ymax)
     # plt.figure(figsize=(16, 2))
-    ax[index].errorbar(fiberstats['FIBER'][mask_good], fiberstats['frac_fail'][mask_good], 
+    ax[index].errorbar(fiberstats['FIBER'][mask_good], fiberstats['frac_fail'][mask_good],
                        yerr=(np.clip(fiberstats['frac_fail_err'][mask_good], None, fiberstats['frac_fail'][mask_good]), fiberstats['frac_fail_err'][mask_good]),
-                       color='C0', fmt='.', ms=3, elinewidth=1, label='PETAL_LOC {}'.format(index))
+                       color='C0', fmt='.', ms=3, elinewidth=1)
     ax[index].errorbar(fiberstats['FIBER'][mask_bad], fiberstats['frac_fail'][mask_bad],
                    yerr=(np.clip(fiberstats['frac_fail_err'][mask_bad], None, fiberstats['frac_fail'][mask_bad]), fiberstats['frac_fail_err'][mask_bad]),
                    color='C3', fmt='.', ms=3, elinewidth=1)
     for bad_index in np.where(mask_really_bad)[0]:
-        ax[index].arrow(fiberstats['FIBER'][bad_index], 0.245, 0, 0.025, head_width=3.5, head_length=0.025, fc='C3', ec='C3')
+        ax[index].arrow(fiberstats['FIBER'][bad_index], ymax*0.78, 0, ymax/10, head_width=3, head_length=ymax/10, fc='C3', ec='C3')
     ax[index].grid(alpha=0.5)
     ax[index].set_yticks([0., 0.1, 0.2, 0.3], minor=False)
-    ax[index].set_ylim(-0.02, 0.3)
+    ax[index].set_ylim(-0.01, ymax)
     ax[index].set_xlim(fiber_min-3, fiber_max+3)
-    ax[index].legend(loc='upper left', markerscale=2)
+    ax[index].annotate('PETAL_LOC {}'.format(index), (fiber_min+3, ymax*0.6), fontsize='large')
+    # ax[index].legend(loc='upper left', markerscale=2)
 plt.tight_layout()
 plt.savefig(os.path.join(output_dir, tracer.lower()+'_failure_rate_vs_fiber.png'))
 plt.close()
-
 
 # Focal plane failure rate plot
 fiberstats['MEAN_X'], fiberstats['MEAN_Y'] = 0., 0.
 for index, fiber in enumerate(fiberstats['FIBER']):
     mask = cat['FIBER']==fiber
     fiberstats['MEAN_X'][index], fiberstats['MEAN_Y'][index] = cat['MEAN_X'][mask][0], cat['MEAN_Y'][mask][0]
-mask = fiberstats['n_tot']>min_fibers
+mask = fiberstats['n_tot']>=min_nobs
 plt.figure(figsize=(12, 11.5))
 plt.scatter(fiberstats['MEAN_X'][mask], fiberstats['MEAN_Y'][mask], c=1-fiberstats['frac_fail'][mask],
             s=45, vmin=0.9, vmax=1., cmap='viridis')

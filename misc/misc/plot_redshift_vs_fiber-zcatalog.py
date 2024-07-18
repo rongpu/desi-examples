@@ -19,13 +19,13 @@ plt.rcParams.update(params)
 parser = argparse.ArgumentParser()
 parser.add_argument("--tracer", help="tracer type (BGS_ANY, LRG, ELG, or QSO)", required=True)
 parser.add_argument('-v', '--version', default='iron', required=False)
-parser.add_argument("--fn", help="path of the catalog file", default=None)
+# parser.add_argument("--fn", help="path of the catalog file", default=None)
 parser.add_argument("--plot_dir", help="directory to save the plots", default=None)
 
 args = parser.parse_args()
 tracer = args.tracer.upper()
 version = args.version
-fn = args.fn
+# fn = args.fn
 plot_dir = args.plot_dir
 
 if not os.path.isdir(plot_dir):
@@ -41,16 +41,25 @@ vmax_dict = {'BGS_ANY': 1/3e4, 'LRG': 1/4e4, 'ELG': 1/6e4, 'QSO': 1/4e4}
 target_bits = {'LRG': 0, 'ELG': 1, 'QSO': 2, 'BGS_ANY': 60}
 target_bit = target_bits[tracer]
 
-if fn is None:
-    fn_dict = {'BGS_ANY': 'ztile-main-bright-cumulative.fits', 'LRG': 'ztile-main-dark-cumulative.fits', 'ELG': 'ztile-main-dark-cumulative.fits', 'QSO': 'ztile-main-dark-cumulative.fits'}
-    # fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/iron/zcatalog', fn_dict[tracer])
-    fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1'.format(version), fn_dict[tracer])
+fn_dict = {'BGS_ANY': 'ztile-main-bright-cumulative.fits', 'LRG': 'ztile-main-dark-cumulative.fits', 'ELG': 'ztile-main-dark-cumulative.fits', 'QSO': 'ztile-main-dark-cumulative.fits'}
+fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1'.format(version), fn_dict[tracer])
 
 min_nobs = 100
+columns = ['COADD_FIBERSTATUS', 'COADD_NUMEXP', 'COADD_NUMNIGHT', 'DELTACHI2', 'DESI_TARGET', 'FIBER', 'FIBERASSIGN_X', 'FIBERASSIGN_Y', 'FIRSTNIGHT', 'LASTNIGHT', 'MASKBITS', 'MAX_MJD', 'MEAN_MJD', 'MIN_MJD', 'SPECTYPE', 'SUBTYPE', 'TARGET_DEC', 'TARGET_RA', 'TARGETID', 'TILEID', 'TSNR2_BGS', 'TSNR2_LRG', 'Z', 'ZWARN']
 
-cat = Table(fitsio.read(fn, columns=['DESI_TARGET']))
-idx = np.where(cat['DESI_TARGET'] & 2**target_bit > 0)[0]
-cat = Table(fitsio.read(fn, rows=idx))
+cat_fn = '/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/{}_data/{}.fits'.format(version, tracer.lower())
+if not os.path.isfile(cat_fn):
+    if not os.path.isdir(os.path.dirname(cat_fn)):
+        try:
+            os.makedirs(os.path.dirname(cat_fn))
+        except:
+            pass
+    cat = Table(fitsio.read(fn, columns=['DESI_TARGET']))
+    idx = np.where(cat['DESI_TARGET'] & 2**target_bit > 0)[0]
+    cat = Table(fitsio.read(fn, rows=idx, columns=columns))
+    cat.write(cat_fn)
+else:
+    cat = Table(fitsio.read(cat_fn))
 print(len(cat))
 
 if 'Z_not4clus' in cat.colnames:
@@ -107,7 +116,7 @@ fiberstats = Table()
 fiberstats['FIBER'], fiberstats['n_tot'] = np.unique(cat['FIBER'], return_counts=True)
 fiberstats['weight'] = 1/fiberstats['n_tot']*np.median(fiberstats['n_tot'])
 cat = join(cat, fiberstats[['FIBER', 'weight']], join_type='outer')
-too_few_fibers = fiberstats['FIBER'][fiberstats['n_tot']<=min_nobs]
+too_few_fibers = fiberstats['FIBER'][fiberstats['n_tot']<min_nobs]
 
 fig, ax = plt.subplots(10, 1, figsize=(16, 20))
 for index in range(10):
