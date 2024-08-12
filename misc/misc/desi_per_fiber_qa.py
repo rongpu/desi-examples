@@ -105,7 +105,7 @@ elif tracer=='ELG':
     tmp2 = Table(fitsio.read(os.path.join('/global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_elg_1.1.1_elgmask_v1.fits.gz')))
     elgmask = hstack([tmp1, tmp2])
     elgmask = elgmask[elgmask['elg_mask']==0]
-    mask = np.in1d(cat['TARGETID'], lrgmask['TARGETID'])
+    mask = np.in1d(cat['TARGETID'], elgmask['TARGETID'])
     print('Mask', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
     cat = cat[mask]
 
