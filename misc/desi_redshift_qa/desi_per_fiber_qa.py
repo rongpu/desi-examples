@@ -1,9 +1,9 @@
 # Plot QA plots per-fiber redshift performance
 # Examples:
-# python desi_per_fiber_qa.py -t BGS_ANY -v jura -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/jura
-# python desi_per_fiber_qa.py -t LRG -v jura -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/jura
-# # python desi_per_fiber_qa.py -t ELG -v jura -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/jura
-# # python desi_per_fiber_qa.py -t QSO -v jura -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/jura
+# python desi_per_fiber_qa.py -t BGS_ANY -v kibo -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/kibo
+# python desi_per_fiber_qa.py -t LRG -v kibo -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/kibo
+# # python desi_per_fiber_qa.py -t ELG -v kibo -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/kibo
+# # python desi_per_fiber_qa.py -t QSO -v kibo -o /global/cfs/cdirs/desi/users/rongpu/redshift_qa/per_fiber_qa/kibo
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc
@@ -41,7 +41,7 @@ target_bits = {'LRG': 0, 'ELG': 1, 'QSO': 2, 'BGS_ANY': 60}
 target_bit = target_bits[tracer]
 
 fn_dict = {'BGS_ANY': 'ztile-main-bright-cumulative.fits', 'LRG': 'ztile-main-dark-cumulative.fits', 'ELG': 'ztile-main-dark-cumulative.fits', 'QSO': 'ztile-main-dark-cumulative.fits'}
-fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1'.format(version), fn_dict[tracer])
+fn = os.path.join('/dvs_ro/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1'.format(version), fn_dict[tracer])
 
 frac_fail_threshold = args.fail_threshold
 if frac_fail_threshold is None:
@@ -60,7 +60,7 @@ if not os.path.isfile(cat_fn):
     cat = Table(fitsio.read(fn, columns=['DESI_TARGET']))
     idx = np.where(cat['DESI_TARGET'] & 2**target_bit > 0)[0]
     cat = Table(fitsio.read(fn, rows=idx, columns=columns))
-    cat.write(cat_fn)
+    cat.write(cat_fn, overwrite=True)
 else:
     cat = Table(fitsio.read(cat_fn))
 print(len(cat))
@@ -164,7 +164,7 @@ else:
     p1 = p
 fiberstats['frac_fail_err'] = np.clip(np.sqrt(n * p * (1-p))/n, np.sqrt(n * p1 * (1-p1))/n, 1)
 
-fiberstats.write(stats_output_path)
+fiberstats.write(stats_output_path, overwrite=True)
 
 fiberstats.sort('n_fail')
 

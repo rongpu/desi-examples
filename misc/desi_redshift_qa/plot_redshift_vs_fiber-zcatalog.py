@@ -1,10 +1,10 @@
 # Use zcatalog instead of the LSS catalog
 # Make 2-D density plots of redshift vs fiber
 # Example:
-# python plot_redshift_vs_fiber-zcatalog.py --tracer BGS_ANY -v jura --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_jura_zcatalog
-# python plot_redshift_vs_fiber-zcatalog.py --tracer LRG -v jura --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_jura_zcatalog
-# python plot_redshift_vs_fiber-zcatalog.py --tracer ELG -v jura --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_jura_zcatalog
-# python plot_redshift_vs_fiber-zcatalog.py --tracer QSO -v jura --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_jura_zcatalog
+# python plot_redshift_vs_fiber-zcatalog.py --tracer BGS_ANY -v kibo --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_kibo_zcatalog
+# python plot_redshift_vs_fiber-zcatalog.py --tracer LRG -v kibo --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_kibo_zcatalog
+# python plot_redshift_vs_fiber-zcatalog.py --tracer ELG_LOP -v kibo --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_kibo_zcatalog
+# python plot_redshift_vs_fiber-zcatalog.py --tracer QSO -v kibo --plot_dir /global/cfs/cdirs/desi/users/rongpu/redshift_qa/z_vs_fiber/Y3_kibo_zcatalog
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc, argparse
@@ -17,7 +17,7 @@ params = {'figure.facecolor': 'w'}
 plt.rcParams.update(params)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--tracer", help="tracer type (BGS_ANY, LRG, ELG, or QSO)", required=True)
+parser.add_argument("--tracer", help="tracer type (BGS_ANY, LRG, ELG, ELG_LOP, or QSO)", required=True)
 parser.add_argument('-v', '--version', default='iron', required=False)
 # parser.add_argument("--fn", help="path of the catalog file", default=None)
 parser.add_argument("--plot_dir", help="directory to save the plots", default=None)
@@ -34,15 +34,15 @@ if not os.path.isdir(plot_dir):
     except:
         pass
 
-z_bins_dict = {'BGS_ANY': np.arange(-0.025, 0.7, 0.02), 'LRG': np.arange(-0.025, 1.5, 0.025), 'ELG': np.arange(0.6, 1.8, 0.025), 'QSO': np.arange(-0.025, 4.5, 0.1)}
-vmax_dict = {'BGS_ANY': 1/3e4, 'LRG': 1/4e4, 'ELG': 1/6e4, 'QSO': 1/4e4}
+z_bins_dict = {'BGS_ANY': np.arange(-0.025, 0.7, 0.02), 'LRG': np.arange(-0.025, 1.5, 0.025), 'ELG': np.arange(0.6, 1.8, 0.025), 'ELG_LOP': np.arange(0.6, 1.8, 0.025), 'QSO': np.arange(-0.025, 4.5, 0.1)}
+vmax_dict = {'BGS_ANY': 1/3e4, 'LRG': 1/4e4, 'ELG': 1/6e4, 'ELG_LOP': 1/6e4, 'QSO': 1/4e4}
 
 # The following target bits are the same in both main and SV3
-target_bits = {'LRG': 0, 'ELG': 1, 'QSO': 2, 'BGS_ANY': 60}
+target_bits = {'LRG': 0, 'ELG': 1, 'ELG_LOP': 5, 'QSO': 2, 'BGS_ANY': 60}
 target_bit = target_bits[tracer]
 
-fn_dict = {'BGS_ANY': 'ztile-main-bright-cumulative.fits', 'LRG': 'ztile-main-dark-cumulative.fits', 'ELG': 'ztile-main-dark-cumulative.fits', 'QSO': 'ztile-main-dark-cumulative.fits'}
-fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1'.format(version), fn_dict[tracer])
+fn_dict = {'BGS_ANY': 'ztile-main-bright-cumulative.fits', 'LRG': 'ztile-main-dark-cumulative.fits', 'ELG': 'ztile-main-dark-cumulative.fits', 'ELG_LOP': 'ztile-main-dark-cumulative.fits', 'QSO': 'ztile-main-dark-cumulative.fits'}
+fn = os.path.join('/dvs_ro/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1'.format(version), fn_dict[tracer])
 
 min_nobs = 100
 columns = ['COADD_FIBERSTATUS', 'COADD_NUMEXP', 'COADD_NUMNIGHT', 'DELTACHI2', 'DESI_TARGET', 'FIBER', 'FIBERASSIGN_X', 'FIBERASSIGN_Y', 'FIRSTNIGHT', 'LASTNIGHT', 'MASKBITS', 'MAX_MJD', 'MEAN_MJD', 'MIN_MJD', 'SPECTYPE', 'SUBTYPE', 'TARGET_DEC', 'TARGET_RA', 'TARGETID', 'TILEID', 'TSNR2_BGS', 'TSNR2_LRG', 'Z', 'ZWARN']
@@ -96,7 +96,7 @@ if tracer=='LRG':
         mask &= (cat['MASKBITS'] & 2**bit)==0
     print('MASKBITS  ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
     cat = cat[mask]
-elif tracer=='ELG':
+elif tracer=='ELG' or tracer=='ELG_LOP':
     # Apply maskbits
     maskbits = [1, 11, 12, 13]
     mask = np.ones(len(cat), dtype=bool)

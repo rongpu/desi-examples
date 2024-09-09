@@ -24,7 +24,7 @@ min_nobs = 50
 tracer = 'ELG'
 
 columns = ['COADD_FIBERSTATUS', 'COADD_NUMEXP', 'COADD_NUMNIGHT', 'DELTACHI2', 'DESI_TARGET', 'FIBER', 'LASTNIGHT', 'MASKBITS', 'SPECTYPE', 'SUBTYPE', 'DEC', 'RA', 'TARGETID', 'TILEID', 'TSNR2_BGS', 'TSNR2_LRG', 'Z_not4clus', 'ZWARN', 'OII_FLUX', 'OII_FLUX_IVAR']
-cat = Table(fitsio.read('/global/cfs/cdirs/desi/survey/catalogs/DA2/LSS/jura-v1/LSScats/test/ELG_LOPnotqso_full_noveto.dat.fits', columns=columns))
+cat = Table(fitsio.read('/dvs_ro/cfs/cdirs/desi/survey/catalogs/DA2/LSS/jura-v1/LSScats/test/ELG_LOPnotqso_full_noveto.dat.fits', columns=columns))
 print(len(cat))
 
 if 'Z_not4clus' in cat.colnames:

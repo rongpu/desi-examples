@@ -21,8 +21,8 @@ plt.rcParams.update(params)
 
 min_nobs = 50
 
-tracer = 'ELG'
-cat = Table(fitsio.read('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/jura_data/{}.fits'.format(tracer.lower())))
+tracer = 'ELG_LOP'
+cat = Table(fitsio.read('/dvs_ro/cfs/cdirs/desicollab/users/rongpu/redshift_qa/kibo_data/{}.fits'.format(tracer.lower())))
 
 cat['EFFTIME_BGS'] = 0.1400 * cat['TSNR2_BGS']
 cat['EFFTIME_LRG'] = 12.15 * cat['TSNR2_LRG']
@@ -96,9 +96,9 @@ pvalue_threshold = 1e-7
 #     print('Outlier fibers:', list(outliers))
 #     print()
 
-# fiberstats.write('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/jura_data/ks_fiberstats_{}.fits'.format(tracer.lower()))
+# fiberstats.write('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/kibo_data/ks_fiberstats_{}.fits'.format(tracer.lower()))
 
-fiberstats = Table(fitsio.read('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/jura_data/ks_fiberstats_{}.fits'.format(tracer.lower())))
+fiberstats = Table(fitsio.read('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/kibo_data/ks_fiberstats_{}.fits'.format(tracer.lower())))
 print(len(fiberstats))
 
 mask_outlier = fiberstats['pvalue']<pvalue_threshold
@@ -123,7 +123,7 @@ bins = np.arange(-0.01, 10, bin_size)
 bin_centers = (bins[1:]+bins[:-1])/2
 
 from matplotlib.backends.backend_pdf import PdfPages
-with PdfPages('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/per_fiber_qa/jura/per_fiber_redshifts_{}_zcatalog.pdf'.format(tracer.lower())) as pdf:
+with PdfPages('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/per_fiber_qa/kibo/per_fiber_redshifts_{}_zcatalog.pdf'.format(tracer.lower())) as pdf:
     # for ii in range(1):
     for ii in range(1000):
         fig, axes = plt.subplots(5, 2, figsize=(20, 24), gridspec_kw={'width_ratios': [0.55, 1.5]})

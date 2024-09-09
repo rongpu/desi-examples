@@ -21,8 +21,8 @@ plt.rcParams.update(params)
 
 min_nobs = 50
 
-tracer = 'LRG'
-cat = Table(fitsio.read('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/jura_data/{}.fits'.format(tracer.lower())))
+tracer = 'BGS_ANY'
+cat = Table(fitsio.read('/dvs_ro/cfs/cdirs/desicollab/users/rongpu/redshift_qa/kibo_data/{}.fits'.format(tracer.lower())))
 
 cat['EFFTIME_BGS'] = 0.1400 * cat['TSNR2_BGS']
 cat['EFFTIME_LRG'] = 12.15 * cat['TSNR2_LRG']
@@ -47,37 +47,22 @@ else:
 print('Min depth   ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
 cat = cat[mask]
 
-# if tracer=='LRG':
-#     # Apply maskbits
-#     maskbits = [1, 8, 9, 11, 12, 13]
-#     mask = np.ones(len(cat), dtype=bool)
-#     for bit in maskbits:
-#         mask &= (cat['MASKBITS'] & 2**bit)==0
-#     print('MASKBITS  ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
-#     cat = cat[mask]
-# elif tracer=='ELG':
-#     # Apply maskbits
-#     maskbits = [1, 11, 12, 13]
-#     mask = np.ones(len(cat), dtype=bool)
-#     for bit in maskbits:
-#         mask &= (cat['MASKBITS'] & 2**bit)==0
-#     print('MASKBITS  ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
-#     cat = cat[mask]
-
-# Apply LRG mask
-main_dir = '/global/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve'
-tmp = Table(fitsio.read(os.path.join(main_dir, 'dr9_lrg_1.1.1_basic.fits'), columns=['TARGETID']))
-tmp2 = Table(fitsio.read(os.path.join(main_dir, 'dr9_lrg_1.1.1_lrgmask_v1.1.fits.gz')))
-lrg = hstack([tmp, tmp2])
-
-print(len(lrg))
-mask = lrg['lrg_mask']==0
-lrg = lrg[mask]
-print(len(lrg))
-
-mask = np.in1d(cat['TARGETID'], lrg['TARGETID'])
-cat = cat[mask]
-print('LRG mask   ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+if tracer=='LRG':
+    # Apply maskbits
+    maskbits = [1, 8, 9, 11, 12, 13]
+    mask = np.ones(len(cat), dtype=bool)
+    for bit in maskbits:
+        mask &= (cat['MASKBITS'] & 2**bit)==0
+    print('MASKBITS  ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+    cat = cat[mask]
+elif tracer=='ELG':
+    # Apply maskbits
+    maskbits = [1, 11, 12, 13]
+    mask = np.ones(len(cat), dtype=bool)
+    for bit in maskbits:
+        mask &= (cat['MASKBITS'] & 2**bit)==0
+    print('MASKBITS  ', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
+    cat = cat[mask]
 
 fiberstats = Table()
 fiberstats['FIBER'], fiberstats['n_tot'] = np.unique(cat['FIBER'], return_counts=True)
@@ -87,7 +72,7 @@ print(np.median(fiberstats['n_tot']))
 pvalue_threshold = 1e-4
 
 # # outliers = []
-# outliers = [552, 553, 725, 1008, 3234, 3235, 3250, 3504, 3969, 3994]
+# outliers = [466, 551, 552, 553, 1008, 1098, 3234, 3235, 3250, 3504, 3969, 3994, 4720, 4891]
 
 # for ii in range(2):
 
@@ -113,9 +98,9 @@ pvalue_threshold = 1e-4
 #     print('Outlier fibers:', list(outliers))
 #     print()
 
-# fiberstats.write('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/jura_data/ks_fiberstats_{}.fits'.format(tracer.lower()))
+# fiberstats.write('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/kibo_data/ks_fiberstats_{}.fits'.format(tracer.lower()))
 
-fiberstats = Table(fitsio.read('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/jura_data/ks_fiberstats_{}.fits'.format(tracer.lower())))
+fiberstats = Table(fitsio.read('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/kibo_data/ks_fiberstats_{}.fits'.format(tracer.lower())))
 print(len(fiberstats))
 
 mask_outlier = fiberstats['pvalue']<pvalue_threshold
@@ -140,7 +125,7 @@ bins = np.arange(-0.01, 10, bin_size)
 bin_centers = (bins[1:]+bins[:-1])/2
 
 from matplotlib.backends.backend_pdf import PdfPages
-with PdfPages('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/per_fiber_qa/jura/per_fiber_redshifts_{}_zcatalog.pdf'.format(tracer.lower())) as pdf:
+with PdfPages('/global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/per_fiber_qa/kibo/per_fiber_redshifts_{}_zcatalog.pdf'.format(tracer.lower())) as pdf:
     # for ii in range(1):
     for ii in range(1000):
         fig, axes = plt.subplots(5, 2, figsize=(20, 24), gridspec_kw={'width_ratios': [0.55, 1.5]})

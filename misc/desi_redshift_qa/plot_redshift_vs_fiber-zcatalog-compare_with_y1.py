@@ -43,8 +43,8 @@ target_bit = target_bits[tracer]
 
 if fn is None:
     fn_dict = {'BGS_ANY': 'ztile-main-bright-cumulative.fits', 'LRG': 'ztile-main-dark-cumulative.fits', 'ELG': 'ztile-main-dark-cumulative.fits', 'QSO': 'ztile-main-dark-cumulative.fits'}
-    # fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/iron/zcatalog', fn_dict[tracer])
-    fn = os.path.join('/global/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1'.format(version), fn_dict[tracer])
+    # fn = os.path.join('/dvs_ro/cfs/cdirs/desi/spectro/redux/iron/zcatalog', fn_dict[tracer])
+    fn = os.path.join('/dvs_ro/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1'.format(version), fn_dict[tracer])
 fn_y1 = fn.replace('jura', 'iron').replace('v1', 'v0')
 print(fn_y1)
 
