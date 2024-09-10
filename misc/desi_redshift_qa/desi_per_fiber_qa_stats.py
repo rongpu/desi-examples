@@ -14,8 +14,8 @@ from scipy.interpolate import interp1d
 from desitarget.targetmask import desi_mask, bgs_mask
 
 import argparse
-import time
 
+import time
 time_start = time.time()
 
 
