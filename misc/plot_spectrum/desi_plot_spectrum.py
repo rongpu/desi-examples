@@ -26,7 +26,7 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
        index: int, index of coadd FITS file if use_targetid=False, or TARGETID if use_targetid=True
 
     Options:
-       redrock_fn, str, path of redrock FITS file
+       redrock_fn, str, path of redrock (or quasarnet) FITS file
        use_targetid: bool, if True, index is TARGETID
        coadd_cameras: bool, if True, the BRZ cameras are coadded together
        restframe: bool, if True, return restframe spectrum in template wavelength grid; if False,
@@ -52,7 +52,14 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
 
     if redrock_fn is None:
         redrock_fn = coadd_fn.replace('/coadd-', '/redrock-')
-    redshifts = Table(fitsio.read(redrock_fn, ext='REDSHIFTS'))
+
+    if os.path.basename(redrock_fn).startswith('redrock-'):
+        redshifts = Table(fitsio.read(redrock_fn, ext='REDSHIFTS'))
+    elif os.path.basename(redrock_fn).startswith('qso_qn-'):
+        redshifts = Table(fitsio.read(redrock_fn, ext='QN_RR'))
+        redshifts.rename_column('Z_NEW', 'Z')
+    else:
+        raise ValueError('Incorrect redrock filename')
 
     if use_targetid:
         tid = index
@@ -68,6 +75,8 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
         if z is None:
             z = redshifts['Z'][coadd_index]
     else:
+        if os.path.basename(redrock_fn).startswith('qso_qn-'):
+            raise ValueError('Only best-fit model available for QN+RR model')
         import h5py
         rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
         f = h5py.File(rrdetails_fn)

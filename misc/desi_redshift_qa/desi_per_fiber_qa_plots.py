@@ -1,9 +1,9 @@
-# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_plots.py -v kibo -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo --tracer LRG --stats /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits
-# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_plots.py -v kibo -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo --tracer ELG_LOP --stats /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits
-# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_plots.py -v kibo -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo --tracer ELG_VLO --stats /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits
-# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_plots.py -v kibo -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo --tracer QSO --stats /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits
-# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_plots.py -v kibo -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo --tracer BGS_BRIGHT --stats /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits
-# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_plots.py -v kibo -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo --tracer BGS_FAINT --stats /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits
+# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_plots.py -v kibo --tracer LRG --stats /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo
+# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_plots.py -v kibo --tracer ELG_LOP --stats /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo
+# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_plots.py -v kibo --tracer ELG_VLO --stats /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo
+# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_plots.py -v kibo --tracer QSO --stats /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo
+# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_plots.py -v kibo --tracer BGS_BRIGHT --stats /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo
+# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_plots.py -v kibo --tracer BGS_FAINT --stats /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc
@@ -26,7 +26,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--version', type=str, help="redux version", required=True)
 parser.add_argument('-o', '--output', type=str, help="output directory path", required=True)
 parser.add_argument('--tracer', type=str, help="tracer type, e.g., LRG", required=True)
-parser.add_argument('--stats', type=str, help="per-fiber stats path", required=False)
+parser.add_argument('--stats', type=str, help="per-fiber stats path", required=True)
 args = parser.parse_args()
 
 output_dir = args.output
@@ -38,22 +38,27 @@ pvalue_threshold = 1e-4
 save_pdf = False
 save_png = True
 
-if stats_fn is not None:
-    stats = Table(fitsio.read(stats_fn))
+stats = Table(fitsio.read(stats_fn))
 
 # dirname = '/dvs_ro/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1/ztile-main-dark-cumulative.fits'.format(version)
-dirname = '/pscratch/sd/r/rongpu/zcatalog'
+dirname = '/pscratch/sd/r/rongpu/redux/kibo/zcatalog/v0.2/main'
 
 print(tracer)
 
 if tracer in ['LRG', 'ELG', 'QSO', 'ELG_LOP', 'ELG_VLO', 'BGS_ANY']:
-    fn = os.path.join(dirname, 'ztile-main-dark-cumulative-basic.fits')
+    fn = os.path.join(dirname, 'ztile-main-dark-cumulative.fits')
+    fn1 = os.path.join(dirname, 'ztile-main-dark-cumulative-extra.fits')
     cat = Table(fitsio.read(fn))
+    cat1 = Table(fitsio.read(fn1, columns=['GOOD_Z_LRG', 'GOOD_Z_ELG']))
+    cat = hstack([cat, cat1], join_type='exact')
     mask = np.where(cat['DESI_TARGET'] & desi_mask[tracer] > 0)[0]
     cat = cat[mask]
 else:
-    fn = os.path.join(dirname, 'ztile-main-bright-cumulative-basic.fits')
+    fn = os.path.join(dirname, 'ztile-main-bright-cumulative.fits')
+    fn1 = os.path.join(dirname, 'ztile-main-bright-cumulative-extra.fits')
     cat = Table(fitsio.read(fn))
+    cat1 = Table(fitsio.read(fn1, columns=['GOOD_Z_BGS']))
+    cat = hstack([cat, cat1], join_type='exact')
     mask = np.where(cat['BGS_TARGET'] & bgs_mask[tracer] > 0)[0]
     cat = cat[mask]
 
@@ -86,17 +91,13 @@ cat = cat[mask]
 
 # Apply masks
 if tracer=='LRG':
-    tmp1 = Table(fitsio.read(os.path.join('/dvs_ro/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_lrg_1.1.1_basic.fits'), columns=['TARGETID']))
-    tmp2 = Table(fitsio.read(os.path.join('/dvs_ro/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_lrg_1.1.1_lrgmask_v1.1.fits.gz')))
-    lrgmask = hstack([tmp1, tmp2])
+    lrgmask = Table(fitsio.read('/dvs_ro/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_lrg_1.1.1_lrgmask_v1.1_with_targetid.fits'))
     lrgmask = lrgmask[lrgmask['lrg_mask']==0]
     mask = np.in1d(cat['TARGETID'], lrgmask['TARGETID'])
     print('Mask', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
     cat = cat[mask]
 elif tracer in ['ELG', 'ELG_LOP', 'ELG_VLO']:
-    tmp1 = Table(fitsio.read(os.path.join('/dvs_ro/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_elg_1.1.1_basic.fits'), columns=['TARGETID']))
-    tmp2 = Table(fitsio.read(os.path.join('/dvs_ro/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_elg_1.1.1_elgmask_v1.fits.gz')))
-    elgmask = hstack([tmp1, tmp2])
+    elgmask = Table(fitsio.read('/dvs_ro/cfs/cdirs/desi/users/rongpu/targets/dr9.0/1.1.1/resolve/dr9_elg_1.1.1_elgmask_v1_with_targetid.fits'))
     elgmask = elgmask[elgmask['elg_mask']==0]
     mask = np.in1d(cat['TARGETID'], elgmask['TARGETID'])
     print('Mask', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
@@ -107,8 +108,11 @@ if tracer=='QSO':
     mask = cat['PRIORITY']==3400
     print('Remove QSO reobservations', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
     cat = cat[mask]
+    z_col = 'Z_QSO'
+else:
+    z_col = 'Z'
 
-good_z_col = 'GOOD_' + tracer.split('_')[0]
+good_z_col = 'GOOD_Z_' + tracer.split('_')[0]
 print(tracer, 'average failure rate', np.sum(~cat[good_z_col])/len(cat))
 
 datemin = datetime.strptime(str(cat['LASTNIGHT'].min()), '%Y%m%d') - timedelta(days=20)
@@ -159,14 +163,14 @@ for apply_good_z_cut in [True, False]:
                         continue
 
                     ax = axes[fiber%5, 0]
-                    vmin, vmax = cat['Z'][mask].min(), cat['Z'][mask].max()
+                    vmin, vmax = cat[z_col][mask].min(), cat[z_col][mask].max()
                     vmin = vmin - (vmax-vmin)*0.05
                     vmax = vmax + (vmax-vmin)*0.05
-                    ax.hist(bin_size*np.digitize(cat['Z'][mask], bins=bins), bins=bins, label='single fiber', rasterized=True)
+                    ax.hist(bin_size*np.digitize(cat[z_col][mask], bins=bins), bins=bins, label='single fiber', rasterized=True)
                     mask1 = ~np.in1d(cat['FIBER'], outliers)
                     if apply_good_z_cut:
                         mask1 &= cat[good_z_col]
-                    ax.hist(bin_size*np.digitize(cat['Z'][mask1], bins=bins), bins=bins, histtype='step', weights=np.full(np.sum(mask1), np.sum(mask)/np.sum(mask1)), color='red', alpha=1., label='all good fibers', rasterized=True)
+                    ax.hist(bin_size*np.digitize(cat[z_col][mask1], bins=bins), bins=bins, histtype='step', weights=np.full(np.sum(mask1), np.sum(mask)/np.sum(mask1)), color='red', alpha=1., label='all good fibers', rasterized=True)
 
                     if stats_fn is not None:
                         index = np.where(stats['FIBER']==fiber)[0][0]
@@ -180,7 +184,7 @@ for apply_good_z_cut in [True, False]:
                     ax = axes[fiber%5, 1]
                     cat1 = cat[mask]
                     dates = np.asarray([datetime.strptime(str(night), '%Y%m%d') for night in cat1['LASTNIGHT']])
-                    ax.plot(dates, cat1['Z'], '.', alpha=np.minimum(0.5, 1.*600/len(cat1)), rasterized=True)
+                    ax.plot(dates, cat1[z_col], '.', alpha=np.minimum(0.5, 1.*600/len(cat1)), rasterized=True)
                     ax.set_title('{} objects'.format(len(cat1)))
                     ax.set_xlabel('date')
                     ax.set_ylabel('Redshift')
@@ -213,14 +217,14 @@ for apply_good_z_cut in [True, False]:
                 ax.set_title('0 objects')
             else:
                 ax = axes[0]
-                vmin, vmax = cat['Z'][mask].min(), cat['Z'][mask].max()
+                vmin, vmax = cat[z_col][mask].min(), cat[z_col][mask].max()
                 vmin = vmin - (vmax-vmin)*0.05
                 vmax = vmax + (vmax-vmin)*0.05
-                ax.hist(bin_size*np.digitize(cat['Z'][mask], bins=bins), bins=bins, label='single fiber')
+                ax.hist(bin_size*np.digitize(cat[z_col][mask], bins=bins), bins=bins, label='single fiber')
                 mask1 = ~np.in1d(cat['FIBER'], outliers)
                 if apply_good_z_cut:
                     mask1 &= cat[good_z_col]
-                ax.hist(bin_size*np.digitize(cat['Z'][mask1], bins=bins), bins=bins, histtype='step', weights=np.full(np.sum(mask1), np.sum(mask)/np.sum(mask1)), color='red', alpha=1., label='all good fibers')
+                ax.hist(bin_size*np.digitize(cat[z_col][mask1], bins=bins), bins=bins, histtype='step', weights=np.full(np.sum(mask1), np.sum(mask)/np.sum(mask1)), color='red', alpha=1., label='all good fibers')
 
                 if stats_fn is not None:
                     index = np.where(stats['FIBER']==fiber)[0][0]
@@ -234,13 +238,13 @@ for apply_good_z_cut in [True, False]:
                 ax = axes[1]
                 cat1 = cat[mask]
                 dates = np.asarray([datetime.strptime(str(night), '%Y%m%d') for night in cat1['LASTNIGHT']])
-                ax.plot(dates, cat1['Z'], '.', alpha=np.minimum(0.5, 1.*600/len(cat1)))
+                ax.plot(dates, cat1[z_col], '.', alpha=np.minimum(0.5, 1.*600/len(cat1)))
                 ax.set_title('{} objects'.format(len(cat1)))
             ax.set_xlabel('Date')
             ax.set_ylabel('Redshift')
             ax.set_xlim(datemin, datemax)
             plt.tight_layout()
-            plt.savefig(os.path.join(png_dir, 'FIBER_{}.png'.format(fiber)))
+            plt.savefig(os.path.join(png_dir, 'fiber_{}_{}.png'.format(fiber, os.path.basename(png_dir))))
             plt.close()
 
             return None

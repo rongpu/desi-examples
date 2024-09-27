@@ -1,5 +1,5 @@
 # Example:
-# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_stats.py -v kibo -o /pscratch/sd/r/rongpu/tmp/per_fiber_qa_stats.fits
+# salloc -N 1 -C cpu -t 04:00:00 -q interactive python desi_per_fiber_qa_stats.py -v kibo -o /global/cfs/cdirs/desicollab/users/rongpu/redshift_qa/new/kibo/per_fiber_qa_stats.fits
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc
@@ -31,7 +31,7 @@ ks_test = True
 pvalue_threshold = 1e-4
 
 # dirname = '/dvs_ro/cfs/cdirs/desi/spectro/redux/{}/zcatalog/v1/ztile-main-dark-cumulative.fits'.format(version)
-dirname = '/pscratch/sd/r/rongpu/zcatalog'
+dirname = '/pscratch/sd/r/rongpu/redux/kibo/zcatalog/v0.2/main'
 
 stats_combined = None
 
@@ -40,13 +40,19 @@ for tracer in ['LRG', 'ELG_LOP', 'ELG_VLO', 'QSO', 'BGS_BRIGHT', 'BGS_FAINT']:
     print(tracer)
 
     if tracer in ['LRG', 'ELG', 'QSO', 'ELG_LOP', 'ELG_VLO', 'BGS_ANY']:
-        fn = os.path.join(dirname, 'ztile-main-dark-cumulative-basic.fits')
+        fn = os.path.join(dirname, 'ztile-main-dark-cumulative.fits')
+        fn1 = os.path.join(dirname, 'ztile-main-dark-cumulative-extra.fits')
         cat = Table(fitsio.read(fn))
+        cat1 = Table(fitsio.read(fn1, columns=['GOOD_Z_LRG', 'GOOD_Z_ELG']))
+        cat = hstack([cat, cat1], join_type='exact')
         mask = np.where(cat['DESI_TARGET'] & desi_mask[tracer] > 0)[0]
         cat = cat[mask]
     else:
-        fn = os.path.join(dirname, 'ztile-main-bright-cumulative-basic.fits')
+        fn = os.path.join(dirname, 'ztile-main-bright-cumulative.fits')
+        fn1 = os.path.join(dirname, 'ztile-main-bright-cumulative-extra.fits')
         cat = Table(fitsio.read(fn))
+        cat1 = Table(fitsio.read(fn1, columns=['GOOD_Z_BGS']))
+        cat = hstack([cat, cat1], join_type='exact')
         mask = np.where(cat['BGS_TARGET'] & bgs_mask[tracer] > 0)[0]
         cat = cat[mask]
 
@@ -99,10 +105,13 @@ for tracer in ['LRG', 'ELG_LOP', 'ELG_VLO', 'QSO', 'BGS_BRIGHT', 'BGS_FAINT']:
         mask = cat['PRIORITY']==3400
         print('Remove QSO reobservations', np.sum(~mask), np.sum(mask), np.sum(~mask)/len(mask))
         cat = cat[mask]
+        z_col = 'Z_QSO'
+    else:
+        z_col = 'Z'
 
     print(tracer, len(cat))
 
-    good_z_col = 'GOOD_' + tracer.split('_')[0]
+    good_z_col = 'GOOD_Z_' + tracer.split('_')[0]
     print(tracer, 'average failure rate', np.sum(~cat[good_z_col])/len(cat))
 
     stats = Table()
@@ -126,12 +135,12 @@ for tracer in ['LRG', 'ELG_LOP', 'ELG_VLO', 'QSO', 'BGS_BRIGHT', 'BGS_FAINT']:
 
             outliers = []
 
-            for ii in range(3):
+            for ii in range(3):  # 3 iterations
                 print('iteration', ii+1)
                 mask = ~np.in1d(cat['FIBER'], outliers)
                 if apply_good_z_cut:
                     mask &= cat[good_z_col]
-                allz = np.sort(np.array(cat['Z'][mask]))
+                allz = np.sort(np.array(cat[z_col][mask]))
                 x = allz.copy()
                 y = np.linspace(0, 1, len(x))
                 cdf = interp1d(x, y, fill_value=(0, 1), bounds_error=False)
@@ -144,7 +153,7 @@ for tracer in ['LRG', 'ELG_LOP', 'ELG_VLO', 'QSO', 'BGS_BRIGHT', 'BGS_FAINT']:
                         if np.sum(mask)==0:
                             pvalues[index] = -99
                             continue
-                    pvalues[index] = kstest(cat['Z'][mask], cdf).pvalue
+                    pvalues[index] = kstest(cat[z_col][mask], cdf).pvalue
 
                 mask_outlier = (pvalues<pvalue_threshold) & (pvalues!=-99)
                 outliers = np.array(np.sort(stats['FIBER'][mask_outlier]))
