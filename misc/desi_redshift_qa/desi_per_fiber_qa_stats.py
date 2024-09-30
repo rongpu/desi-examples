@@ -59,6 +59,10 @@ for tracer in ['LRG', 'ELG_LOP', 'ELG_VLO', 'QSO', 'BGS_BRIGHT', 'BGS_FAINT']:
     print(tracer, 'zcat', len(cat))
     stats_zcat = Table()
     stats_zcat['FIBER'], stats_zcat[tracer.lower()+'_zcat_n_tot'] = np.unique(cat['FIBER'], return_counts=True)
+    # fill in the missing fibers
+    tmp = Table()
+    tmp['FIBER'] = np.arange(5000)
+    stats_zcat = join(stats_zcat, tmp, keys='FIBER', join_type='outer').filled(0)
 
     cat['EFFTIME_BGS'] = 0.1400 * cat['TSNR2_BGS']
     cat['EFFTIME_LRG'] = 12.15 * cat['TSNR2_LRG']

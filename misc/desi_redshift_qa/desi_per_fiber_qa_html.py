@@ -38,16 +38,14 @@ f.close()
 for fiber in np.arange(5000):
 
     mask = stats['FIBER']==fiber
-    if np.sum(mask)==1:
-        index = np.where(mask)[0][0]
-    else:
-        index = None
+    index = np.where(mask)[0][0]
 
     f = open(os.path.join(html_dir, 'fiber_{}.html'.format(fiber)), "w")
     f.write('<html>\n')
 
     f.write('<style>\ntable, th, td {\n  border:1px solid black;\n}\n</style>\n')
 
+    ################################## summary table ##################################
     f.write('<table>\n')
 
     f.write('<tr>\n')
@@ -61,24 +59,54 @@ for fiber in np.arange(5000):
     f.write('</tr>\n')
 
     f.write('<tr>\n')
-    f.write('<th>p-value</th>\n')
+    f.write('<th>N(z) p-value</th>\n')
     for tracer in ['BGS_BRIGHT', 'LRG', 'ELG_LOP', 'QSO', 'ELG_VLO', 'BGS_FAINT']:
         for apply_good_z_cut in [False, True]:
             if apply_good_z_cut is False:
                 pvalue_col = tracer.lower()+'_ks_pvalue_allz'
             else:
                 pvalue_col = tracer.lower()+'_ks_pvalue_goodz'
-            if index is not None:
-                pvalue = stats[pvalue_col][index]
-                if pvalue<pvalue_threshold:
-                    f.write('<th><p style="color:red;">{:.4g}</p></th>\n'.format(pvalue))
-                else:
-                    f.write('<td>{:.4g}</td>\n'.format(pvalue))
+            pvalue = stats[pvalue_col][index]
+            if pvalue==-99:
+                f.write('<td>N/A</td>\n')
+            elif pvalue<pvalue_threshold:
+                f.write('<th><p style="color:red;">{:.4g}</p></th>\n'.format(pvalue))
             else:
-                f.write('<th>N/A</th>\n')
+                f.write('<td>{:.4g}</td>\n'.format(pvalue))
+    f.write('</tr>\n')
+
+    f.write('<tr>\n')
+    f.write('<th>fiber failure rate</th>\n')
+    for tracer in ['BGS_BRIGHT', 'LRG', 'ELG_LOP', 'QSO', 'ELG_VLO', 'BGS_FAINT']:
+        n_tot = stats[tracer.lower()+'_n_tot'][index]
+        n_fail = stats[tracer.lower()+'_n_fail'][index]
+        frac_fail = stats[tracer.lower()+'_frac_fail'][index]
+        frac_fail_err = stats[tracer.lower()+'_frac_fail_err'][index]
+        if n_tot==-99:
+            f.write('<td colspan="2">N/A</td>\n')
+        else:
+            f.write('<td colspan="2">{:.1f} &pm; {:.1f}% ({}/{})</td>\n'.format(frac_fail*100, frac_fail_err*100, n_fail, n_tot))
+    f.write('</tr>\n')
+
+    f.write('<tr>\n')
+    f.write('<th>overall failure rate</th>\n')
+    for tracer in ['BGS_BRIGHT', 'LRG', 'ELG_LOP', 'QSO', 'ELG_VLO', 'BGS_FAINT']:
+        mask = stats[tracer.lower()+'_n_tot']!=-99
+        if np.sum(mask)==0:
+            n_tot = -99
+        else:
+            n_tot = np.sum(stats[tracer.lower()+'_n_tot'][mask])
+            n_fail = np.sum(stats[tracer.lower()+'_n_fail'][mask])
+            frac_fail = n_fail/n_tot
+        if n_tot==-99:
+            f.write('<td colspan="2">N/A</td>\n')
+        else:
+            f.write('<td colspan="2">{:.1f}% ({}/{})</td>\n'.format(frac_fail*100, n_fail, n_tot))
+    f.write('</tr>\n')
+
     f.write('</table>\n')
 
-    # f.write('<style>\ntable, th, td {\n  all: unset;\n}\n</style>\n')
+    ################################## QA plots ##################################
 
     f.write('<table>\n')
     for tracer in ['BGS_BRIGHT', 'LRG', 'ELG_LOP', 'QSO', 'ELG_VLO', 'BGS_FAINT']:
