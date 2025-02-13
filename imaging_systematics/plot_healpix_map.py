@@ -49,7 +49,7 @@ def plot_map(nside, v, pix=None, vmin=None, vmax=None, cmap='jet', title=None, s
 
     npix = hp.nside2npix(nside)
 
-    v = np.array(v)
+    v = np.array(v).astype(float)
 
     # Density map
     hp_mask = np.zeros(npix, dtype=bool)

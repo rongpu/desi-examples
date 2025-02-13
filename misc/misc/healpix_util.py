@@ -7,6 +7,25 @@ import healpy as hp
 from multiprocessing import Pool
 
 
+def simple_count_in_healpix(nside, ra, dec, nest=False, empty_pixels=False, include_radec=True):
+    pix_allobj = hp.pixelfunc.ang2pix(nside, ra, dec, lonlat=True, nest=nest)
+    pix_unique, pix_count = np.unique(pix_allobj, return_counts=True)
+    hp_table = Table()
+
+    if empty_pixels:
+        hp_table['HPXPIXEL'] = np.arange(hp.nside2npix(nside))
+        hp_table['count'] = 0
+        hp_table['count'][pix_unique] = pix_count
+    else:
+        hp_table['HPXPIXEL'] = pix_unique
+        hp_table['count'] = pix_count
+
+    if include_radec:
+        hp_table['RA'], hp_table['DEC'] = hp.pixelfunc.pix2ang(nside, hp_table['HPXPIXEL'], nest=nest, lonlat=True)
+
+    return hp_table
+
+
 def count_in_healpix(nside, ra, dec, weights=None, n_processes=1):
 
     pix_allobj = np.array(hp.pixelfunc.ang2pix(nside, ra, dec, nest=False, lonlat=True))
