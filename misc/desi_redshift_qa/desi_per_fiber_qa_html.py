@@ -45,6 +45,15 @@ for fiber in np.arange(5000):
 
     f.write('<style>\ntable, th, td {\n  border:1px solid black;\n}\n</style>\n')
 
+    f.write('<p>')
+    if fiber==0:
+        f.write('<a href="fiber_1.html">Next Fiber</a>')
+    elif fiber==4999:
+        f.write('<a href="fiber_0.html">Previous Fiber</a>')
+    else:
+        f.write('<a href="fiber_{}.html">Previous Fiber</a> &nbsp; <a href="fiber_{}.html">Next Fiber</a>'.format(fiber-1, fiber+1))
+    f.write('</p>')
+
     ################################## summary table ##################################
     f.write('<table>\n')
 
