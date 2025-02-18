@@ -28,7 +28,11 @@ default_xsize = {32: 1500, 64: 4000, 128: 4000, 256: 6000, 512: 12000}
 
 def plot_map(nside, v, pix=None, vmin=None, vmax=None, cmap='jet', title=None, save_path=None,
              xsize=None, dpi=None, show=True, timing=True, nest=False, coord=None, cbar_label='',
-             fontsize=9.5):
+             fontsize=9.5, overwrite=True):
+
+    if os.path.isfile(save_path) and overwrite is False:
+        print('Plot exists:', save_path, '  Skip')
+        return None
 
     if xsize is None:
         xsize = default_xsize[nside]
