@@ -30,7 +30,7 @@ def plot_map(nside, v, pix=None, vmin=None, vmax=None, cmap='jet', title=None, s
              xsize=None, dpi=None, show=True, timing=True, nest=False, coord=None, cbar_label='',
              fontsize=9.5, overwrite=True):
 
-    if os.path.isfile(save_path) and overwrite is False:
+    if save_path is not None and os.path.isfile(save_path) and overwrite is False:
         print('Plot exists:', save_path, '  Skip')
         return None
 
