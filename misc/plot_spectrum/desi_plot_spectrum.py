@@ -305,16 +305,20 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
                 # model_flux_smooth = gaussian_filter1d(model_flux[camera], gauss_smooth, mode='constant', cval=0)
                 model_flux_smooth = convolve(model_flux[camera], gauss_kernel, boundary='extend')
             ax1.plot(wave, model_flux_smooth, lw=3, color='r', alpha=0.4, label=label_model)
-        if ylim=='auto':
-            ymin = np.minimum(ymin, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 1.))
-            ymax = np.maximum(ymax, 1.3 * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 99.))
+        if ylim=='auto' or isinstance(ylim, (int, float)):
+            if ylim=='auto':
+                yscale = 1.3
+            else:
+                yscale = 1.3 * ylim
+            ymin = np.minimum(ymin, yscale * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 1.))
+            ymax = np.maximum(ymax, yscale * np.percentile(flux_smooth[np.isfinite(flux_smooth)], 99.))
         elif ylim=='minmax':
             mask = (wave>xlim[0]) & (wave<xlim[1])
             if np.sum(mask)>0:
                 ymin = np.minimum(ymin, np.min(flux_smooth[mask & np.isfinite(flux_smooth)]))
                 ymax = np.maximum(ymax, np.max(flux_smooth[mask & np.isfinite(flux_smooth)]))
 
-    if ylim=='auto':
+    if ylim=='auto' or isinstance(ylim, (int, float)):
         ylim = [ymin, ymax]
     elif ylim=='minmax':
         ylim = [ymin-0.05*(ymax-ymin), ymax+0.05*(ymax-ymin)]

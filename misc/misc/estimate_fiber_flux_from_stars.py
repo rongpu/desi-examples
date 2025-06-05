@@ -4,6 +4,10 @@
 # from estimate_fiber_flux_from_stars import get_stellar_flux
 # cat = Table(fitsio.read('/global/cfs/cdirs/desi/users/rongpu/xmm_lae/odin_xmm_n419_lae_targets.fits'))
 # ffcat = get_stellar_flux(cat)
+# print brightest magnitudes:
+# for col in ['star_flux_g', 'star_flux_r', 'star_flux_i', 'star_flux_z']:
+#     mask = ffcat[col]!=0
+#     print(col, np.min(22.5 - 2.5*np.log10(ffcat[col][mask])))
 
 from __future__ import division, print_function
 import sys, os, glob, time, warnings, gc
