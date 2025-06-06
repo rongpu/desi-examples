@@ -3,8 +3,8 @@
 # Example:
 # from estimate_fiber_flux_from_stars import get_stellar_flux
 # cat = Table(fitsio.read('/global/cfs/cdirs/desi/users/rongpu/xmm_lae/odin_xmm_n419_lae_targets.fits'))
-# ffcat = get_stellar_flux(cat)
-# print brightest magnitudes:
+# ffcat = get_stellar_flux(cat['ra'], cat['dec'], night=20221223)
+# # print brightest magnitudes:
 # for col in ['star_flux_g', 'star_flux_r', 'star_flux_i', 'star_flux_z']:
 #     mask = ffcat[col]!=0
 #     print(col, np.min(22.5 - 2.5*np.log10(ffcat[col][mask])))
@@ -23,14 +23,49 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from scipy import stats
 
+from astropy.time import Time
 
-def get_stellar_flux(cat):
+
+gaia_dir = '/dvs_ro/cfs/cdirs/cosmo/data/gaia/dr3/healpix'
+# The reference epoch for Gaia DR3 (both Gaia EDR3 and the full Gaia DR3) is 2016.0
+# https://www.cosmos.esa.int/web/gaia/dr3
+gaia_epoch = 2016.0
+
+
+def get_stellar_flux(ra, dec, mjd=None, night=None, gaia_g_limit=18.0, verbose=False):
+    '''
+    Return the predicted fiber fluxes (in DECam filters) from Gaia stars.
+
+    Args:
+       ra, dec: RA and DEC arrays
+
+    Options:
+       mjd: MJD of the observation; either float or array
+       night: night of the observation; string or integer of "YYYYMMDD"
+       gaia_g_limit: Gaia G magnitude faint limit
+       verbose: print more stuff if True
+    '''
+
+    if (mjd is not None) and (night is not None):
+        raise ValueError('mjd and night cannot be both specified.')
+
+    if (mjd is None) and (night is None):
+        epoch = gaia_epoch
+    elif mjd is not None:
+        t = Time(mjd, format='mjd')
+        epoch = t.jyear
+    elif night is not None:
+        night_str = str(night)
+        iso_date = f"{night_str[:4]}-{night_str[4:6]}-{night_str[6:]}"
+        t = Time(iso_date, format='iso')
+        epoch = t.jyear
+
+    cat = Table()
+    cat['ra'], cat['dec'] = np.array(ra), np.array(dec)
 
     bands = ['g', 'r', 'i', 'z']
 
     cat['original_id'] = np.arange(len(cat))
-
-    gaia_dir = '/dvs_ro/cfs/cdirs/cosmo/data/gaia/edr3/healpix'
 
     nside = 32
     hp_pix = hp.ang2pix(nside, cat['ra'], cat['dec'], nest=True, lonlat=True)
@@ -40,14 +75,16 @@ def get_stellar_flux(cat):
     gaia = []
     for hp_index in np.unique(hp_include_neighbors):
         gaia_fn = str(hp_index).zfill(5)
-        tmp = Table(fitsio.read(os.path.join(gaia_dir, 'healpix-{}.fits'.format(gaia_fn)), columns=['PHOT_G_MEAN_MAG', 'PHOT_G_MEAN_FLUX_OVER_ERROR']))
-        mask = (tmp['PHOT_G_MEAN_MAG']<18.0) & (tmp['PHOT_G_MEAN_FLUX_OVER_ERROR']>0)
+        gaia_path = os.path.join(gaia_dir, 'healpix-{}.fits'.format(gaia_fn))
+        # print(gaia_path)
+        tmp = Table(fitsio.read(gaia_path, columns=['PHOT_G_MEAN_MAG', 'PHOT_G_MEAN_FLUX_OVER_ERROR']))
+        mask = (tmp['PHOT_G_MEAN_MAG']<gaia_g_limit) & (tmp['PHOT_G_MEAN_FLUX_OVER_ERROR']>0)
         idx = np.where(mask)[0]
-        tmp = Table(fitsio.read(os.path.join(gaia_dir, 'healpix-{}.fits'.format(gaia_fn)), rows=idx, columns=['RA', 'DEC', 'PHOT_G_MEAN_MAG', 'PHOT_BP_MEAN_MAG', 'PHOT_RP_MEAN_MAG']))
+        tmp = Table(fitsio.read(gaia_path, rows=idx, columns=['RA', 'DEC', 'PHOT_G_MEAN_MAG', 'PHOT_BP_MEAN_MAG', 'PHOT_RP_MEAN_MAG', 'PMRA', 'PMDEC']))
         gaia.append(tmp)
 
     gaia = vstack(gaia)
-    print(len(gaia))
+    # print(len(gaia))
 
 
     # Coefficients for EDR3
@@ -87,7 +124,7 @@ def get_stellar_flux(cat):
     mask_radius_factor = 3
 
     g_bins = np.arange(int(np.floor(gaia['mask_mag'].min())), 19, 1)
-    print(g_bins)
+    # print(g_bins)
 
     ra2 = cat['ra']
     dec2 = cat['dec']
@@ -98,24 +135,27 @@ def get_stellar_flux(cat):
     for index in range(len(g_bins)-1):
 
         gmin, gmax = g_bins[index], g_bins[index+1]
-        print('{} < G < {}'.format(gmin, gmax))
-
         mask = (gaia['mask_mag']>gmin) & (gaia['mask_mag']<gmax)
         gaia1 = gaia[mask]
-        print(np.sum(mask), np.sum(mask)/len(mask))
+        if verbose:
+            print('{} < G < {}'.format(gmin, gmax))
+            print(np.sum(mask), np.sum(mask)/len(mask))
 
         if np.sum(mask)==0:
             continue
 
-        ra1 = gaia1['RA']
-        dec1 = gaia1['DEC']
+        ra1 = gaia1['RA'] + (epoch - gaia_epoch) * gaia1['PMRA'] * 1e-3/3600 / np.cos(np.radians(gaia1['DEC']))
+        ra1 = (ra1 + 360)%360  # Wrap around
+        dec1 = gaia1['DEC'] + (epoch - gaia_epoch) * gaia1['PMDEC'] * 1e-3/3600
+
         sky1 = SkyCoord(ra1*u.degree,dec1*u.degree, frame='icrs')
 
         max_mask_radius = (1630 * 1.396**(-gaia1['mask_mag'])).max()
         search_radius = max_mask_radius * mask_radius_factor
 
         idx1, idx2, d2d, _ = sky2.search_around_sky(sky1, seplimit=search_radius*u.arcsec)
-        print('%d nearby objects'%len(idx1))
+        if verbose:
+            print('%d nearby objects'%len(idx1))
         if len(idx1)==0:
             continue
 
@@ -185,7 +225,7 @@ def get_stellar_flux(cat):
 
     fiber_diameter = 1.5  # arcsec
     fiber_area = np.pi * (fiber_diameter/2)**2  # sq.arcsec.
-    print(fiber_area)
+    # print(fiber_area)
 
     # Extended PSF parameters
     params = {
@@ -252,6 +292,6 @@ def get_stellar_flux(cat):
     #     ffcat['stellar_imag'] = 22.5 - 2.5*np.log10(ffcat['star_flux_i'])
     #     ffcat['stellar_zmag'] = 22.5 - 2.5*np.log10(ffcat['star_flux_z'])
 
-    print(len(ffcat))
+    # print(len(ffcat))
 
     return ffcat
