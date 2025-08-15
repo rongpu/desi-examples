@@ -193,12 +193,10 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
 
     z0 = z
 
-    if z0 is not None:
-        show_model = False
-
     if show_model:
         # Get model spectrum
-        _, model_flux = get_rr_model(coadd_fn, coadd_index, redrock_fn=redrock_fn, ith_bestfit=ith_bestfit, coadd_cameras=coadd_cameras)
+        model_wave, model_flux, model_z = get_rr_model(coadd_fn, coadd_index, redrock_fn=redrock_fn, ith_bestfit=ith_bestfit, coadd_cameras=coadd_cameras,
+            return_z=True)
 
     if redrock_fn is None:
         redrock_fn = coadd_fn.replace('/coadd-', '/redrock-')
@@ -304,7 +302,9 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             elif gauss_smooth>0:
                 # model_flux_smooth = gaussian_filter1d(model_flux[camera], gauss_smooth, mode='constant', cval=0)
                 model_flux_smooth = convolve(model_flux[camera], gauss_kernel, boundary='extend')
-            ax1.plot(wave, model_flux_smooth, lw=3, color='r', alpha=0.4, label=label_model)
+            if z0 is not None:  # use user-specified redshift for model spectrum
+                model_wave[camera] = model_wave[camera] / (1+model_z) * (1+z)
+            ax1.plot(model_wave[camera], model_flux_smooth, lw=3, color='r', alpha=0.4, label=label_model)
         if ylim=='auto' or isinstance(ylim, (int, float)):
             if ylim=='auto':
                 yscale = 1.3
