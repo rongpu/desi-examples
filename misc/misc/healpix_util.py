@@ -37,6 +37,7 @@ def count_in_healpix(nside, ra, dec, weights=None, n_processes=1):
         hp_table['count'] = pix_count
     else:
         global weights_, pix_unique_, pixorder_, pixcnts_
+        assert len(ra)==len(weights)
         pix_unique_ = pix_unique
         pixcnts_ = pix_count.copy()
         pixcnts_ = np.insert(pixcnts_, 0, 0)
