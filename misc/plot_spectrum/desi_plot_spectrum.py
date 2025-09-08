@@ -40,54 +40,26 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
     import redrock.templates
     from desispec.io import read_spectra
 
-    with open(os.devnull, 'w') as devnull:  # supress noise
-        with contextlib.redirect_stdout(devnull):
-
-            templates = dict()
-            for filename in redrock.templates.find_templates():
-                tx = redrock.templates.Template(filename)
-                templates[(tx.template_type, tx.sub_type)] = tx
-
-            spec = read_spectra(coadd_fn)
-
     if redrock_fn is None:
         redrock_fn = coadd_fn.replace('/coadd-', '/redrock-')
-
-    if os.path.basename(redrock_fn).startswith('redrock-'):
-        redshifts = Table(fitsio.read(redrock_fn, ext='REDSHIFTS'))
-    elif os.path.basename(redrock_fn).startswith('qso_qn-'):
-        redshifts = Table(fitsio.read(redrock_fn, ext='QN_RR'))
-        redshifts.rename_column('Z_NEW', 'Z')
+        rrmodel_fn = coadd_fn.replace('/coadd-', '/rrmodel-')
     else:
-        raise ValueError('Incorrect redrock filename')
+        rrmodel_fn = redrock_fn.replace('/redrock-', '/rrmodel-')
 
-    if use_targetid:
-        tid = index
-        coadd_index = np.where(redshifts['TARGETID']==index)[0][0]
-    else:
-        tid = redshifts['TARGETID'][index]
-        coadd_index = index
+    # Use the model spectra file if available
+    if os.path.isfile(rrmodel_fn) and restframe==False and ith_bestfit==1:
+        redshifts = Table(fitsio.read(rrmodel_fn, ext='REDSHIFTS'))
 
-    if ith_bestfit==1:
-        spectype, subtype = redshifts['SPECTYPE'][coadd_index], redshifts['SUBTYPE'][coadd_index]
-        tx = templates[(spectype, subtype)]
-        coeff = redshifts['COEFF'][coadd_index][0:tx.nbasis]
+        if use_targetid:
+            tid = index
+            coadd_index = np.where(redshifts['TARGETID']==index)[0][0]
+        else:
+            tid = redshifts['TARGETID'][index]
+            coadd_index = index
+
         if z is None:
             z = redshifts['Z'][coadd_index]
-    else:
-        if os.path.basename(redrock_fn).startswith('qso_qn-'):
-            raise ValueError('Only best-fit model available for QN+RR model')
-        import h5py
-        rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
-        f = h5py.File(rrdetails_fn)
-        entry = f['zfit'][str(tid)]["zfit"]
-        spectype, subtype = entry['spectype'][ith_bestfit].decode("utf-8"), entry['subtype'][ith_bestfit].decode("utf-8")
-        tx = templates[(spectype, subtype)]
-        coeff = entry['coeff'][ith_bestfit][0:tx.nbasis]
-        if z is None:
-            z = entry['z'][ith_bestfit]
 
-    if restframe==False:
         wave = dict()
         model_flux = dict()
         if coadd_cameras:
@@ -95,14 +67,71 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
         else:
             cameras = ['B', 'R', 'Z']
         for camera in cameras:
-            wave[camera] = spec.wave[camera.lower()]
-            model_flux[camera] = np.zeros(wave[camera].shape)
-            model = tx.flux.T.dot(coeff).T
-            mx = resample_flux(wave[camera], tx.wave*(1+z), model)
-            model_flux[camera] = spec.R[camera.lower()][coadd_index].dot(mx)
+            wave[camera] = fitsio.read(rrmodel_fn, ext=camera+'_WAVELENGTH')
+            model_flux[camera] = fitsio.read(rrmodel_fn, ext=camera+'_MODEL')[coadd_index]
+
     else:
-        wave = tx.wave
-        model_flux = tx.flux.T.dot(coeff).T
+
+        with open(os.devnull, 'w') as devnull:  # supress noise
+            with contextlib.redirect_stdout(devnull):
+
+                templates = dict()
+                for filename in redrock.templates.find_templates():
+                    tx = redrock.templates.Template(filename)
+                    templates[(tx.template_type, tx.sub_type)] = tx
+
+                spec = read_spectra(coadd_fn)
+
+        if os.path.basename(redrock_fn).startswith('redrock-'):
+            redshifts = Table(fitsio.read(redrock_fn, ext='REDSHIFTS'))
+        elif os.path.basename(redrock_fn).startswith('qso_qn-'):
+            redshifts = Table(fitsio.read(redrock_fn, ext='QN_RR'))
+            redshifts.rename_column('Z_NEW', 'Z')
+        else:
+            raise ValueError('Incorrect redrock filename')
+
+        if use_targetid:
+            tid = index
+            coadd_index = np.where(redshifts['TARGETID']==index)[0][0]
+        else:
+            tid = redshifts['TARGETID'][index]
+            coadd_index = index
+
+        if ith_bestfit==1:
+            spectype, subtype = redshifts['SPECTYPE'][coadd_index], redshifts['SUBTYPE'][coadd_index]
+            tx = templates[(spectype, subtype)]
+            coeff = redshifts['COEFF'][coadd_index][0:tx.nbasis]
+            if z is None:
+                z = redshifts['Z'][coadd_index]
+        else:
+            if os.path.basename(redrock_fn).startswith('qso_qn-'):
+                raise ValueError('Only best-fit model available for QN+RR model')
+            import h5py
+            rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
+            f = h5py.File(rrdetails_fn)
+            entry = f['zfit'][str(tid)]["zfit"]
+            spectype, subtype = entry['spectype'][ith_bestfit].decode("utf-8"), entry['subtype'][ith_bestfit].decode("utf-8")
+            tx = templates[(spectype, subtype)]
+            coeff = entry['coeff'][ith_bestfit][0:tx.nbasis]
+            if z is None:
+                z = entry['z'][ith_bestfit]
+
+        if restframe==False:
+            wave = dict()
+            model_flux = dict()
+            if coadd_cameras:
+                cameras = ['BRZ']
+            else:
+                cameras = ['B', 'R', 'Z']
+            for camera in cameras:
+                wave[camera] = spec.wave[camera.lower()]
+                model_flux[camera] = np.zeros(wave[camera].shape)
+                model = tx.flux.T.dot(coeff).T
+                mx = resample_flux(wave[camera], tx.wave*(1+z), model)
+                model_flux[camera] = spec.R[camera.lower()][coadd_index].dot(mx)
+        else:
+            wave = tx.wave
+            model_flux = tx.flux.T.dot(coeff).T
 
     if return_z:
         return wave, model_flux, z
