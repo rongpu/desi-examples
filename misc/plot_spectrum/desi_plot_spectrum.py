@@ -41,10 +41,10 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
     from desispec.io import read_spectra
 
     if redrock_fn is None:
-        redrock_fn = coadd_fn.replace('/coadd-', '/redrock-')
-        rrmodel_fn = coadd_fn.replace('/coadd-', '/rrmodel-')
+        redrock_fn = coadd_fn.replace('coadd-', 'redrock-')
+        rrmodel_fn = coadd_fn.replace('coadd-', 'rrmodel-')
     else:
-        rrmodel_fn = redrock_fn.replace('/redrock-', '/rrmodel-')
+        rrmodel_fn = redrock_fn.replace('redrock-', 'rrmodel-')
 
     # Use the model spectra file if available
     if os.path.isfile(rrmodel_fn) and restframe==False and ith_bestfit==1:
@@ -107,7 +107,7 @@ def get_rr_model(coadd_fn, index, redrock_fn=None, ith_bestfit=1, use_targetid=F
             if os.path.basename(redrock_fn).startswith('qso_qn-'):
                 raise ValueError('Only best-fit model available for QN+RR model')
             import h5py
-            rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
+            rrdetails_fn = redrock_fn.replace('redrock-', 'rrdetails-').replace('.fits', '.h5')
             f = h5py.File(rrdetails_fn)
             entry = f['zfit'][str(tid)]["zfit"]
             spectype, subtype = entry['spectype'][ith_bestfit].decode("utf-8"), entry['subtype'][ith_bestfit].decode("utf-8")
@@ -228,7 +228,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             return_z=True)
 
     if redrock_fn is None:
-        redrock_fn = coadd_fn.replace('/coadd-', '/redrock-')
+        redrock_fn = coadd_fn.replace('coadd-', 'redrock-')
     redshifts = Table(fitsio.read(redrock_fn, ext='REDSHIFTS'))
     fibermap = Table(fitsio.read(redrock_fn, ext='FIBERMAP'))
     fibermap.remove_column('TARGETID')
@@ -244,7 +244,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
             zwarn, deltachi2 = redshifts['ZWARN'][coadd_index], redshifts['DELTACHI2'][coadd_index]
         else:
             import h5py
-            rrdetails_fn = redrock_fn.replace('/redrock-', '/rrdetails-').replace('.fits', '.h5')
+            rrdetails_fn = redrock_fn.replace('redrock-', 'rrdetails-').replace('.fits', '.h5')
             f = h5py.File(rrdetails_fn)
             entry = f['zfit'][str(tid)]["zfit"]
             z = entry['z'][ith_bestfit]
