@@ -378,7 +378,7 @@ def plot_spectrum(coadd_fn, index, redrock_fn=None, use_targetid=False, coadd_ca
     ax1.set_ylabel('flux ($10^{-17}$ ergs/s/cm$^2$/$\AA$)')
     if show_restframe:
         ax2 = ax1.twiny()
-        ax2.set_xlim(3400/(1+z), 10000/(1+z))
+        ax2.set_xlim(xlim[0]/(1+z), xlim[1]/(1+z))
         ax2.set_xlabel('restframe wavelength ($\AA$)')
         ax2.xaxis.set_minor_locator(AutoMinorLocator())
         ax2.tick_params(which='both', direction="in")
