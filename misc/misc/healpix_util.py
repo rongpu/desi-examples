@@ -76,7 +76,7 @@ def create_healpix_map(nside, ra, dec, v, n_processes=1, stat=np.mean, include_r
     pix_allobj = np.array(hp.pixelfunc.ang2pix(nside, ra, dec, nest=False, lonlat=True))
     pix_unique, pix_count = np.unique(pix_allobj, return_counts=True)
 
-    global v_, pix_unique_, pixorder_, pixcnts_, stat_, include_radec_
+    global v_, pix_unique_, pixorder_, pixcnts_, stat_
     assert len(ra)==len(v)
     pix_unique_ = pix_unique
     pixcnts_ = pix_count.copy()
@@ -88,14 +88,16 @@ def create_healpix_map(nside, ra, dec, v, n_processes=1, stat=np.mean, include_r
 
     v_ = v
     stat_ = stat
-    include_radec_ = include_radec
 
     with Pool(processes=n_processes) as pool:
         res = pool.map(compute_map_value_in_parallel, pix_idx_split)
     hp_table = vstack(res)
     hp_table.sort('HPXPIXEL')
 
-    del v_, pix_unique_, pixorder_, pixcnts_, stat_, include_radec_
+    del v_, pix_unique_, pixorder_, pixcnts_, stat_
+
+    if include_radec:
+        hp_table['RA'], hp_table['DEC'] = hp.pixelfunc.pix2ang(nside, hp_table['HPXPIXEL'], nest=False, lonlat=True)
 
     return hp_table
 
@@ -104,8 +106,6 @@ def compute_map_value_in_parallel(pix_idx):
     pix_list = pix_unique_[pix_idx]
     hp_table = Table()
     hp_table['HPXPIXEL'] = pix_list
-    if include_radec_:
-        hp_table['RA'], hp_table['DEC'] = hp.pixelfunc.pix2ang(nside, pix_list, nest=False, lonlat=True)
     hp_table['v'] = np.zeros(len(hp_table))
     hp_table['count'] = np.zeros(len(hp_table), dtype='int')
     for index in np.arange(len(pix_idx)):
