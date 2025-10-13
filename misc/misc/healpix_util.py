@@ -71,6 +71,51 @@ def weighted_count_in_parallel(pix_idx):
     return hp_table
 
 
+def create_healpix_map(nside, ra, dec, v, n_processes=1, stat=np.mean, include_radec=True):
+    # Create healpix map with average value of v
+    pix_allobj = np.array(hp.pixelfunc.ang2pix(nside, ra, dec, nest=False, lonlat=True))
+    pix_unique, pix_count = np.unique(pix_allobj, return_counts=True)
+
+    global v_, pix_unique_, pixorder_, pixcnts_, stat_, include_radec_
+    assert len(ra)==len(v)
+    pix_unique_ = pix_unique
+    pixcnts_ = pix_count.copy()
+    pixcnts_ = np.insert(pixcnts_, 0, 0)
+    pixcnts_ = np.cumsum(pixcnts_)
+    pixorder_ = np.argsort(pix_allobj)
+    # split among the processors
+    pix_idx_split = np.array_split(np.arange(len(pix_unique_)), n_processes)
+
+    v_ = v
+    stat_ = stat
+    include_radec_ = include_radec
+
+    with Pool(processes=n_processes) as pool:
+        res = pool.map(compute_map_value_in_parallel, pix_idx_split)
+    hp_table = vstack(res)
+    hp_table.sort('HPXPIXEL')
+
+    del v_, pix_unique_, pixorder_, pixcnts_, stat_, include_radec_
+
+    return hp_table
+
+
+def compute_map_value_in_parallel(pix_idx):
+    pix_list = pix_unique_[pix_idx]
+    hp_table = Table()
+    hp_table['HPXPIXEL'] = pix_list
+    if include_radec_:
+        hp_table['RA'], hp_table['DEC'] = hp.pixelfunc.pix2ang(nside, pix_list, nest=False, lonlat=True)
+    hp_table['v'] = np.zeros(len(hp_table))
+    hp_table['count'] = np.zeros(len(hp_table), dtype='int')
+    for index in np.arange(len(pix_idx)):
+        idx = pixorder_[pixcnts_[pix_idx[index]]:pixcnts_[pix_idx[index]+1]]
+        hp_table['v'][index] = stat_(v_[idx])
+        hp_table['count'][index] = len(idx)
+
+    return hp_table
+
+
 def downsize_hp_map(nside_in, nside_out, hp_in, stats_dict=None, weights=None, n_processes=1):
     '''
     Downsize a masked (nan) healpix map.
